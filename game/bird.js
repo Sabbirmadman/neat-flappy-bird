@@ -4,7 +4,7 @@ class Bird {
         this.ctx = canvas.getContext("2d");
         this.radius = 15;
         this.position = {
-            x: canvas.width / 3,
+            x: canvas.width / 5,
             y: canvas.height / 2,
         };
         this.velocity = 0;

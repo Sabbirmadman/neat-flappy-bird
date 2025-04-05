@@ -2,7 +2,7 @@ import Population from "./population.js";
 import Bird from "../game/bird.js";
 
 class Neat {
-    constructor(canvas, ground, pipeManager, populationSize = 50) {
+    constructor(canvas, ground, pipeManager, populationSize = 100) {
         this.canvas = canvas;
         this.ground = ground;
         this.pipeManager = pipeManager;
@@ -16,16 +16,55 @@ class Neat {
 
         this.isTraining = false;
         this.speedMultiplier = 1; // For fast-forwarding training
+
+        // Store the best bird for visualization
+        this.bestBird = null;
+        this.showNetworkVisualization = true;
+    }
+
+    // Toggle network visualization
+    toggleVisualization() {
+        this.showNetworkVisualization = !this.showNetworkVisualization;
+    }
+
+    // Add a method to set the population size
+    setPopulationSize(size) {
+        // Validate the size
+        if (size < 2) size = 2; // Minimum population size
+        if (size > 500) size = 500; // Maximum population size to prevent performance issues
+
+        // Create a new population with the given size
+        this.population = new Population(size);
+
+        // Recreate birds with the new population size
+        this.createBirds();
+
+        // Reset pipes for consistency
+        this.pipeManager.reset();
+
+        return size; // Return the actual size used
     }
 
     createBirds() {
         this.birds = [];
         const genomes = this.population.getGenomes();
 
+        // Find the elite genome (if exists)
+        const eliteGenome = genomes.find((g) => g.isElite);
+        if (eliteGenome) {
+            eliteGenome.isElite = true;
+        }
         for (const genome of genomes) {
             const bird = new Bird(this.canvas);
             bird.brain = genome;
             bird.isDead = false;
+
+            // Make the elite bird a different color
+            if (genome === eliteGenome) {
+                bird.color = "red";
+                this.bestBird = bird; // Track the best bird
+            }
+
             this.birds.push(bird);
         }
     }
@@ -50,6 +89,7 @@ class Neat {
 
         // Check if all birds are dead
         let allDead = true;
+        let activeBirds = 0;
 
         // Update each bird
         for (let i = 0; i < this.birds.length; i++) {
@@ -57,6 +97,7 @@ class Neat {
 
             if (!bird.isDead) {
                 allDead = false;
+                activeBirds++;
                 bird.update();
 
                 // Update the bird's brain info
@@ -76,14 +117,32 @@ class Neat {
 
                 // Think and decide whether to jump
                 if (nearestPipe) {
-                    // Calculate inputs for the neural network
+                    // Calculate the 4 inputs we want:
+                    // 1. Distance to next pipe (normalized)
+                    const horizontalDistance =
+                        (nearestPipe.position.x - bird.position.x) /
+                        this.canvas.width;
+
+                    // 2. Bird's vertical velocity (normalized)
+                    const normalizedVelocity = bird.velocity / 10;
+
+                    // 3. Vertical distance to top pipe (normalized)
+                    const verticalDistanceToTopPipe =
+                        (bird.position.y - nearestPipe.gapPosition) /
+                        this.canvas.height;
+
+                    // 4. Vertical distance to bottom pipe (normalized)
+                    const verticalDistanceToBottomPipe =
+                        (nearestPipe.gapPosition +
+                            nearestPipe.gap -
+                            bird.position.y) /
+                        this.canvas.height;
+
                     const inputs = [
-                        bird.position.y / this.canvas.height, // Bird's y position (normalized)
-                        bird.velocity / 10, // Bird's velocity (normalized)
-                        nearestPipe.position.x / this.canvas.width, // Pipe's x position (normalized)
-                        nearestPipe.gapPosition / this.canvas.height, // Pipe's gap top position (normalized)
-                        (nearestPipe.gapPosition + nearestPipe.gap) /
-                            this.canvas.height, // Pipe's gap bottom position (normalized)
+                        horizontalDistance,
+                        normalizedVelocity,
+                        verticalDistanceToTopPipe,
+                        verticalDistanceToBottomPipe,
                     ];
 
                     // Let the bird's brain think and decide
@@ -95,6 +154,15 @@ class Neat {
                 // Update score
                 bird.brain.score = this.pipeManager.getScore();
             }
+        }
+
+        // Update best bird tracking
+        const aliveBirds = this.birds.filter((b) => !b.isDead);
+        if (aliveBirds.length > 0) {
+            // Find the bird with the best fitness among the alive ones
+            this.bestBird = aliveBirds.reduce((best, bird) => {
+                return bird.brain.fitness > best.brain.fitness ? bird : best;
+            }, aliveBirds[0]);
         }
 
         // If all birds are dead, evolve to the next generation
@@ -115,9 +183,14 @@ class Neat {
     }
 
     draw(ctx) {
-        // Draw only living birds
+        // Only draw birds within the canvas view
         for (const bird of this.birds) {
-            if (!bird.isDead) {
+            if (
+                !bird.isDead &&
+                bird.position.x > -bird.radius &&
+                bird.position.x < this.canvas.width + bird.radius &&
+                bird.position.y < this.canvas.height + bird.radius
+            ) {
                 bird.draw(ctx);
             }
         }
@@ -129,7 +202,7 @@ class Neat {
         ctx.fillRect(10, 10, 240, 100);
 
         ctx.fillStyle = "white";
-        ctx.font = "16px Arial";
+        ctx.font = "12px Arial";
         ctx.fillText(`Generation: ${stats.generation}`, 20, 30);
         ctx.fillText(`Best Score: ${stats.bestScore}`, 20, 50);
         ctx.fillText(
@@ -140,6 +213,100 @@ class Neat {
             70
         );
         ctx.fillText(`Speed: ${this.speedMultiplier}x`, 20, 90);
+
+        // Draw network visualization if enabled and there's a best bird
+        if (
+            this.showNetworkVisualization &&
+            this.bestBird &&
+            !this.bestBird.isDead
+        ) {
+            this.drawNetworkVisualization(ctx);
+        }
+    }
+
+    drawNetworkVisualization(ctx) {
+        if (
+            !this.bestBird ||
+            !this.bestBird.brain ||
+            !this.bestBird.brain.lastInputs
+        )
+            return;
+
+        const inputs = this.bestBird.brain.lastInputs;
+        const visualX = this.canvas.width - 220;
+        const visualY = this.canvas.height - 300;
+        const width = 230;
+        const height = 180;
+
+        // Draw background
+        ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+        ctx.fillRect(visualX, visualY, width, height);
+
+        // Draw title
+        ctx.fillStyle = "white";
+        ctx.font = "12px Arial";
+        ctx.fillText("Neural Network Inputs:", visualX + 10, visualY + 20);
+
+        // Input labels
+        const labels = [
+            "Distance to pipe:",
+            "Bird velocity:",
+            "Distance to top pipe:",
+            "Distance to bottom pipe:",
+        ];
+
+        // Draw input values with bars
+        const barWidth = 150;
+        const barHeight = 15;
+
+        for (let i = 0; i < inputs.length; i++) {
+            const y = visualY + 40 + i * 30;
+
+            // Draw label
+            ctx.fillStyle = "white";
+            ctx.fillText(labels[i], visualX + 10, y);
+
+            // Draw bar background
+            ctx.fillStyle = "rgba(100, 100, 100, 0.5)";
+            ctx.fillRect(visualX + 10, y + 5, barWidth, barHeight);
+
+            // Map normalized values to colors
+            let value = inputs[i];
+
+            // Clamp value between 0 and 1 for visualization
+            const clampedValue = Math.max(0, Math.min(1, value + 0.5));
+
+            // Color based on value (red to green)
+            let r, g;
+            if (clampedValue < 0.5) {
+                r = 255;
+                g = Math.floor(clampedValue * 2 * 255);
+            } else {
+                r = Math.floor((1 - clampedValue) * 2 * 255);
+                g = 255;
+            }
+
+            // Draw filled bar
+            ctx.fillStyle = `rgb(${r}, ${g}, 0)`;
+            ctx.fillRect(
+                visualX + 10,
+                y + 5,
+                barWidth * clampedValue,
+                barHeight
+            );
+
+            // Draw value text
+            ctx.fillStyle = "white";
+            ctx.fillText(value.toFixed(2), visualX + barWidth + 20, y + 15);
+        }
+
+        // Draw fitness
+        ctx.fillStyle = "white";
+        ctx.fillText(
+            `Current Fitness: ${this.bestBird.brain.fitness.toFixed(2)}`,
+            visualX + 10,
+            visualY + height - 20
+        );
     }
 
     // Get the best bird's genome for display or saving

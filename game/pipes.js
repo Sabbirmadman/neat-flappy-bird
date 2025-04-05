@@ -68,8 +68,16 @@ class Pipe {
         if (bird.isDead) return false;
 
         // Calculate bird's bounding box for easier collision detection
-        const birdLeft = bird.position.x - bird.radius;
         const birdRight = bird.position.x + bird.radius;
+        const birdLeft = bird.position.x - bird.radius;
+        if (
+            !(
+                birdRight > this.position.x &&
+                birdLeft < this.position.x + this.width
+            )
+        ) {
+            return false;
+        }
         const birdTop = bird.position.y - bird.radius;
         const birdBottom = bird.position.y + bird.radius;
 
@@ -93,7 +101,7 @@ class Pipe {
     }
 
     isOffScreen() {
-        return this.position.x + this.width < 0;
+        return this.position.x < -this.width;
     }
 }
 

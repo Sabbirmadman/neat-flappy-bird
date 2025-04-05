@@ -5,6 +5,7 @@ import Neat from "../neat/neat.js";
 
 class Game {
     constructor(canvas) {
+        this.populationSize = 100; // Number of birds in AI mode
         this.canvas = canvas;
         this.ctx = canvas.getContext("2d");
         this.ground = new Ground(canvas);
@@ -15,7 +16,12 @@ class Game {
         this.isHumanPlaying = true;
 
         // AI mode
-        this.neat = new Neat(canvas, this.ground, this.pipeManager, 50);
+        this.neat = new Neat(
+            canvas,
+            this.ground,
+            this.pipeManager,
+            this.populationSize
+        );
         this.isAITraining = false;
 
         // Game state
@@ -103,7 +109,7 @@ class Game {
                 this.canvas,
                 this.ground,
                 this.pipeManager,
-                50
+                this.populationSize
             );
         }
 

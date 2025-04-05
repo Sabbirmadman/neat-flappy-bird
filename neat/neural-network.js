@@ -94,12 +94,20 @@ class NeuralNetwork {
     mutate(rate) {
         const mutateValue = (val) => {
             if (Math.random() < rate) {
-                // 10% chance to reset the weight completely
-                if (Math.random() < 0.1) {
+                // 5% chance for a completely random weight
+                if (Math.random() < 0.05) {
                     return Math.random() * 2 - 1;
                 }
-                // 90% chance to adjust the weight slightly
-                return val + (Math.random() * 0.2 - 0.1);
+
+                // 10% chance for a larger adjustment
+                else if (Math.random() < 0.1) {
+                    return val + (Math.random() * 0.8 - 0.4);
+                }
+
+                // 85% chance for a small adjustment
+                else {
+                    return val + (Math.random() * 0.2 - 0.1);
+                }
             }
             return val;
         };

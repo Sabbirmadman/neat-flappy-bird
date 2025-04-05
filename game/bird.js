@@ -23,7 +23,8 @@ class Bird {
     }
 
     jump() {
-        this.velocity = this.jumpStrength;
+        // Add a small upward impulse rather than completely resetting velocity
+        this.velocity = Math.min(this.velocity, this.jumpStrength);
     }
 
     update() {

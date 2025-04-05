@@ -15,7 +15,6 @@ class Neat {
         this.createBirds();
 
         this.isTraining = false;
-        this.speedMultiplier = 1; // For fast-forwarding training
 
         // Store the best bird for visualization
         this.bestBird = null;
@@ -75,10 +74,6 @@ class Neat {
 
     stopTraining() {
         this.isTraining = false;
-    }
-
-    setSpeed(multiplier) {
-        this.speedMultiplier = multiplier;
     }
 
     update(currentTime) {
@@ -219,7 +214,7 @@ class Neat {
         const stats = this.population.getStats();
 
         ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
-        ctx.fillRect(10, 10, 240, 100);
+        ctx.fillRect(10, 10, 240, 80);
 
         ctx.fillStyle = "white";
         ctx.font = "12px Arial";
@@ -232,7 +227,6 @@ class Neat {
             20,
             70
         );
-        ctx.fillText(`Speed: ${this.speedMultiplier}x`, 20, 90);
 
         // Draw network visualization if enabled and there's a best bird
         if (

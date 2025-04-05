@@ -66,17 +66,6 @@ class Game {
                 this.toggleAITraining();
             }
 
-            // Speed controls
-            if (e.code === "Digit1") {
-                this.neat.setSpeed(1);
-            } else if (e.code === "Digit2") {
-                this.neat.setSpeed(2);
-            } else if (e.code === "Digit5") {
-                this.neat.setSpeed(5);
-            } else if (e.code === "Digit0") {
-                this.neat.setSpeed(10);
-            }
-
             // Switch between human and AI mode
             if (e.code === "KeyH") {
                 this.isHumanPlaying = true;
@@ -162,10 +151,7 @@ class Game {
 
             // Update NEAT
             if (this.isAITraining) {
-                // Run multiple updates for speed boost
-                for (let i = 0; i < this.neat.speedMultiplier; i++) {
-                    this.neat.update(currentTime);
-                }
+                this.neat.update(currentTime);
             }
         }
 
@@ -242,7 +228,7 @@ class Game {
 
         if (!this.isHumanPlaying) {
             this.ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
-            this.ctx.fillRect(this.canvas.width - 150, 50, 190, 160);
+            this.ctx.fillRect(this.canvas.width - 160, 50, 190, 140);
             this.ctx.fillStyle = "white";
             this.ctx.font = "12px Arial";
             this.ctx.fillText("Controls:", this.canvas.width - 140, 75);
@@ -251,17 +237,12 @@ class Game {
                 this.canvas.width - 140,
                 100
             );
-            this.ctx.fillText(
-                "1/2/5/0: Set speed",
-                this.canvas.width - 140,
-                125
-            );
-            this.ctx.fillText("H: Human mode", this.canvas.width - 140, 150);
-            this.ctx.fillText("A: AI mode", this.canvas.width - 140, 175);
+            this.ctx.fillText("H: Human mode", this.canvas.width - 140, 125);
+            this.ctx.fillText("A: AI mode", this.canvas.width - 140, 150);
             this.ctx.fillText(
                 `Mode: ${this.isAITraining ? "Training" : "Paused"}`,
                 this.canvas.width - 140,
-                200
+                175
             );
         }
     }

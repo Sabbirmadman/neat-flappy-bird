@@ -1,7 +1,7 @@
 import NeuralNetwork from "./neural-network.js";
 
 class Genome {
-    constructor(inputNodes = 4, hiddenNodes = 10, outputNodes = 1) {
+    constructor(inputNodes = 4, hiddenNodes = 12, outputNodes = 1) {
         this.brain = new NeuralNetwork(inputNodes, hiddenNodes, outputNodes);
         this.fitness = 0;
         this.score = 0;
@@ -39,18 +39,11 @@ class Genome {
 
     // Calculate fitness score based on score and lifespan
     calculateFitness() {
-        // Heavily reward scoring points
-        let scoreFitness = Math.pow(2, this.score);
-
-        // Reward staying alive
-        let lifespanFitness = this.lifespan / 50;
-
-        // Combine rewards, with much more emphasis on scoring
-        this.fitness = scoreFitness + lifespanFitness;
-
-        // Ensure positive fitness
+        let scoreFitness = Math.pow(1.5, this.score);
+        let lifespanFitness = this.lifespan / 10;
+        let distanceFitness = this.distanceToNextPipeGap || 0;
+        this.fitness = scoreFitness + lifespanFitness + distanceFitness;
         if (this.fitness < 0.1) this.fitness = 0.1;
-
         return this.fitness;
     }
 }

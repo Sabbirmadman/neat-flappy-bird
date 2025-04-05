@@ -5,8 +5,8 @@ class Pipe {
         this.ground = ground;
 
         this.width = 80;
-        this.gap = 180; // Gap between top and bottom pipes
-        this.speed = 2;
+        this.gap = 200; // Gap between top and bottom pipes
+        this.speed = 1.5;
         this.passed = false;
 
         // Random height for the gap position

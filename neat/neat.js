@@ -145,6 +145,18 @@ class Neat {
                         verticalDistanceToBottomPipe,
                     ];
 
+                    // Calculate bird's distance to the center of the pipe gap
+                    // Higher value = closer to optimal position
+                    const gapCenterY =
+                        nearestPipe.gapPosition + nearestPipe.gap / 2;
+                    const verticalDistToGapCenter =
+                        Math.abs(bird.position.y - gapCenterY) /
+                        this.canvas.height;
+
+                    // Store normalized distance to gap center (1 = perfect alignment, 0 = furthest away)
+                    bird.brain.distanceToNextPipeGap =
+                        1 - verticalDistToGapCenter;
+
                     // Let the bird's brain think and decide
                     if (bird.brain.think(inputs)) {
                         bird.jump();
@@ -153,6 +165,9 @@ class Neat {
 
                 // Update score
                 bird.brain.score = this.pipeManager.getScore();
+
+                // Update fitness in real-time for better selection
+                bird.brain.calculateFitness();
             }
         }
 
@@ -172,6 +187,11 @@ class Neat {
     }
 
     evolve() {
+        // Calculate final fitness for all birds before evolution
+        for (const bird of this.birds) {
+            bird.brain.calculateFitness();
+        }
+
         // Evolve the population
         this.population.evolve();
 
@@ -233,10 +253,10 @@ class Neat {
             return;
 
         const inputs = this.bestBird.brain.lastInputs;
-        const visualX = this.canvas.width - 220;
+        const visualX = this.canvas.width - 180;
         const visualY = this.canvas.height - 300;
-        const width = 230;
-        const height = 180;
+        const width = 180;
+        const height = 200;
 
         // Draw background
         ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
@@ -244,20 +264,20 @@ class Neat {
 
         // Draw title
         ctx.fillStyle = "white";
-        ctx.font = "12px Arial";
+        ctx.font = "10px Arial";
         ctx.fillText("Neural Network Inputs:", visualX + 10, visualY + 20);
 
         // Input labels
         const labels = [
-            "Distance to pipe:",
+            "Dis to pipe:",
             "Bird velocity:",
-            "Distance to top pipe:",
-            "Distance to bottom pipe:",
+            "Dis to top pipe:",
+            "Dis to btm pipe:",
         ];
 
         // Draw input values with bars
-        const barWidth = 150;
-        const barHeight = 15;
+        const barWidth = 100;
+        const barHeight = 10;
 
         for (let i = 0; i < inputs.length; i++) {
             const y = visualY + 40 + i * 30;
@@ -300,13 +320,24 @@ class Neat {
             ctx.fillText(value.toFixed(2), visualX + barWidth + 20, y + 15);
         }
 
-        // Draw fitness
+        // Draw fitness and gap distance
         ctx.fillStyle = "white";
         ctx.fillText(
             `Current Fitness: ${this.bestBird.brain.fitness.toFixed(2)}`,
             visualX + 10,
-            visualY + height - 20
+            visualY + height - 40
         );
+
+        // Add gap distance
+        if (this.bestBird.brain.distanceToNextPipeGap !== undefined) {
+            ctx.fillText(
+                `Gap Alignment: ${(
+                    this.bestBird.brain.distanceToNextPipeGap * 100
+                ).toFixed(0)}%`,
+                visualX + 10,
+                visualY + height - 20
+            );
+        }
     }
 
     // Get the best bird's genome for display or saving

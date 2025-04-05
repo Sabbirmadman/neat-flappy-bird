@@ -7,9 +7,7 @@ class Population {
         this.generation = 1;
         this.bestScore = 0;
         this.bestFitness = 0;
-        this.mutationRate = 0.1; // 10% chance of mutation
-
-        // Create initial population
+        this.mutationRate = Math.max(0.08, 0.2 - this.generation * 0.002);
         this.initialize();
     }
 

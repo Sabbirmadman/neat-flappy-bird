@@ -5,7 +5,7 @@ import Neat from "../neat/neat.js";
 
 class Game {
     constructor(canvas) {
-        this.populationSize = 100; // Number of birds in AI mode
+        this.populationSize = 200;
         this.canvas = canvas;
         this.ctx = canvas.getContext("2d");
         this.ground = new Ground(canvas);
@@ -86,6 +86,7 @@ class Game {
                 this.isHumanPlaying = false;
                 this.gameOver = false;
                 this.restart();
+                this.start();
             }
         });
 
@@ -241,25 +242,25 @@ class Game {
 
         if (!this.isHumanPlaying) {
             this.ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
-            this.ctx.fillRect(this.canvas.width - 200, 50, 190, 160);
+            this.ctx.fillRect(this.canvas.width - 150, 50, 190, 160);
             this.ctx.fillStyle = "white";
-            this.ctx.font = "16px Arial";
-            this.ctx.fillText("Controls:", this.canvas.width - 180, 75);
+            this.ctx.font = "12px Arial";
+            this.ctx.fillText("Controls:", this.canvas.width - 140, 75);
             this.ctx.fillText(
                 "T: Toggle training",
-                this.canvas.width - 180,
+                this.canvas.width - 140,
                 100
             );
             this.ctx.fillText(
                 "1/2/5/0: Set speed",
-                this.canvas.width - 180,
+                this.canvas.width - 140,
                 125
             );
-            this.ctx.fillText("H: Human mode", this.canvas.width - 180, 150);
-            this.ctx.fillText("A: AI mode", this.canvas.width - 180, 175);
+            this.ctx.fillText("H: Human mode", this.canvas.width - 140, 150);
+            this.ctx.fillText("A: AI mode", this.canvas.width - 140, 175);
             this.ctx.fillText(
                 `Mode: ${this.isAITraining ? "Training" : "Paused"}`,
-                this.canvas.width - 180,
+                this.canvas.width - 140,
                 200
             );
         }

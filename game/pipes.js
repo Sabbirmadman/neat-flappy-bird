@@ -65,6 +65,8 @@ class Pipe {
     }
 
     checkCollision(bird) {
+        if (bird.isDead) return false;
+
         // Calculate bird's bounding box for easier collision detection
         const birdLeft = bird.position.x - bird.radius;
         const birdRight = bird.position.x + bird.radius;
@@ -153,6 +155,26 @@ class PipeManager {
 
     getScore() {
         return this.score;
+    }
+
+    // Get the nearest pipe in front of the bird (for AI input)
+    getNearestPipe() {
+        let nearestPipe = null;
+        let nearestDistance = Infinity;
+
+        for (const pipe of this.pipes) {
+            // Only consider pipes in front of the bird
+            if (pipe.position.x > 100) {
+                // Bird's x position
+                const distance = pipe.position.x - 100;
+                if (distance < nearestDistance) {
+                    nearestPipe = pipe;
+                    nearestDistance = distance;
+                }
+            }
+        }
+
+        return nearestPipe;
     }
 }
 

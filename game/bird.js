@@ -10,12 +10,16 @@ class Bird {
         this.velocity = 0;
         this.gravity = 0.2;
         this.jumpStrength = -6; // Reduced strength for more control
+        this.brain = null; // Reference to genome for AI birds
+        this.isDead = false; // Track if bird is alive
+        this.color = "yellow"; // Default color
     }
 
     reset() {
         // Reset bird to initial position and velocity
         this.position.y = this.canvas.height / 2;
         this.velocity = 0;
+        this.isDead = false;
     }
 
     jump() {
@@ -43,7 +47,8 @@ class Bird {
     }
 
     draw() {
-        this.ctx.fillStyle = "yellow";
+        // For the best bird, use a different color
+        this.ctx.fillStyle = this.color;
         this.ctx.beginPath();
         this.ctx.arc(
             this.position.x,

@@ -16,6 +16,7 @@ document.addEventListener("DOMContentLoaded", () => {
     console.log("Creating game instance");
     const game = new Game(canvas);
     console.log("Game instance created", game);
+
     // Show instructions
     const ctx = canvas.getContext("2d");
     ctx.fillStyle = "skyblue";
@@ -23,9 +24,19 @@ document.addEventListener("DOMContentLoaded", () => {
     ctx.fillStyle = "black";
     ctx.font = "24px Arial";
     ctx.fillText(
-        "Press SPACE to jump",
-        canvas.width / 2 - 100,
-        canvas.height / 2
+        "Press SPACE to jump (Human)",
+        canvas.width / 2 - 150,
+        canvas.height / 2 - 30
+    );
+    ctx.fillText(
+        "Press T to start AI training",
+        canvas.width / 2 - 150,
+        canvas.height / 2 + 10
+    );
+    ctx.fillText(
+        "Press H/A to switch modes",
+        canvas.width / 2 - 150,
+        canvas.height / 2 + 50
     );
     console.log("Instructions drawn");
 });

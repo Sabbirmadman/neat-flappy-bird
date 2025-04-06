@@ -26,6 +26,12 @@ class Game {
         // Keep rendering options but remove game speed
         this.renderAllBirds = true;
         this.maxRenderBirds = 20;
+
+        // Detect if we're on a mobile device
+        this.isMobile =
+            /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ||
+            window.innerWidth <= 768;
+
         this.bindEvents();
     }
 
@@ -130,6 +136,11 @@ class Game {
                 }, 50);
             }
         });
+
+        // Add touch events for canvas (for mobile)
+        if (this.isMobile) {
+            // Touch events are handled by the mobile controls in main.js
+        }
     }
 
     // Keep population size adjustment methods
@@ -286,33 +297,67 @@ class Game {
             );
 
             if (this.gameOver) {
-                this.ctx.fillStyle = "black";
-                this.ctx.font = "48px Arial";
-                this.ctx.fillText(
-                    "GAME OVER",
-                    this.canvas.width / 2 - 130,
-                    this.canvas.height / 2 - 50
+                this.ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+                this.ctx.fillRect(
+                    this.canvas.width / 2 - 150,
+                    this.canvas.height / 2 - 100,
+                    300,
+                    200
                 );
-                this.ctx.font = "24px Arial";
-                this.ctx.fillText(
-                    "Press R to restart",
-                    this.canvas.width / 2 - 100,
-                    this.canvas.height / 2
-                );
+
+                this.ctx.fillStyle = "white";
                 this.ctx.font = "36px Arial";
                 this.ctx.fillText(
+                    "GAME OVER",
+                    this.canvas.width / 2 - 100,
+                    this.canvas.height / 2 - 50
+                );
+
+                this.ctx.font = "24px Arial";
+                if (this.isMobile) {
+                    this.ctx.fillText(
+                        "Tap HUMAN to restart",
+                        this.canvas.width / 2 - 110,
+                        this.canvas.height / 2
+                    );
+                } else {
+                    this.ctx.fillText(
+                        "Press R to restart",
+                        this.canvas.width / 2 - 80,
+                        this.canvas.height / 2
+                    );
+                }
+
+                this.ctx.font = "30px Arial";
+                this.ctx.fillText(
                     "Score: " + this.pipeManager.getScore(),
-                    this.canvas.width / 2 - 70,
+                    this.canvas.width / 2 - 60,
                     this.canvas.height / 2 + 50
                 );
             } else if (!this.isRunning) {
-                this.ctx.fillStyle = "black";
-                this.ctx.font = "24px Arial";
-                this.ctx.fillText(
-                    "Press SPACE to start",
-                    this.canvas.width / 2 - 120,
-                    this.canvas.height / 2
+                this.ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+                this.ctx.fillRect(
+                    this.canvas.width / 2 - 150,
+                    this.canvas.height / 2 - 50,
+                    300,
+                    100
                 );
+
+                this.ctx.fillStyle = "white";
+                this.ctx.font = "24px Arial";
+                if (this.isMobile) {
+                    this.ctx.fillText(
+                        "Tap JUMP to start",
+                        this.canvas.width / 2 - 100,
+                        this.canvas.height / 2
+                    );
+                } else {
+                    this.ctx.fillText(
+                        "Press SPACE to start",
+                        this.canvas.width / 2 - 110,
+                        this.canvas.height / 2
+                    );
+                }
             }
         } else {
             // Keep rendering optimization
@@ -336,32 +381,56 @@ class Game {
         if (!this.isHumanPlaying) {
             // Update controls display - remove speed controls
             this.ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
-            this.ctx.fillRect(this.canvas.width - 160, 50, 190, 190); // Smaller height
-            this.ctx.fillStyle = "white";
-            this.ctx.font = "12px Arial";
-            this.ctx.fillText("Controls:", this.canvas.width - 140, 75);
-            this.ctx.fillText(
-                "T: Pause/Resume AI",
-                this.canvas.width - 140,
-                100
-            );
-            this.ctx.fillText("H: Human mode", this.canvas.width - 140, 125);
-            this.ctx.fillText("A: AI mode", this.canvas.width - 140, 150);
-            this.ctx.fillText(
-                "V: Toggle bird rendering",
-                this.canvas.width - 140,
-                175
-            );
-            this.ctx.fillText(
-                "[/]: Adjust population",
-                this.canvas.width - 140,
-                200
-            );
-            this.ctx.fillText(
-                `Mode: AI ${this.isAITraining ? "Running" : "Paused"}`,
-                this.canvas.width - 140,
-                225
-            );
+
+            if (this.isMobile) {
+                // Smaller controls panel for mobile
+                this.ctx.fillRect(this.canvas.width - 130, 50, 120, 140);
+                this.ctx.fillStyle = "white";
+                this.ctx.font = "12px Arial";
+                this.ctx.fillText("Controls:", this.canvas.width - 110, 70);
+                this.ctx.fillText(
+                    "HUMAN: Human mode",
+                    this.canvas.width - 120,
+                    90
+                );
+                this.ctx.fillText("AI: AI mode", this.canvas.width - 120, 110);
+                this.ctx.fillText(
+                    `Mode: ${this.isAITraining ? "AI" : "HUMAN"}`,
+                    this.canvas.width - 120,
+                    170
+                );
+            } else {
+                this.ctx.fillRect(this.canvas.width - 160, 50, 190, 190);
+                this.ctx.fillStyle = "white";
+                this.ctx.font = "12px Arial";
+                this.ctx.fillText("Controls:", this.canvas.width - 140, 75);
+                this.ctx.fillText(
+                    "T: Pause/Resume AI",
+                    this.canvas.width - 140,
+                    100
+                );
+                this.ctx.fillText(
+                    "H: Human mode",
+                    this.canvas.width - 140,
+                    125
+                );
+                this.ctx.fillText("A: AI mode", this.canvas.width - 140, 150);
+                this.ctx.fillText(
+                    "V: Toggle bird rendering",
+                    this.canvas.width - 140,
+                    175
+                );
+                this.ctx.fillText(
+                    "[/]: Adjust population",
+                    this.canvas.width - 140,
+                    200
+                );
+                this.ctx.fillText(
+                    `Mode: AI ${this.isAITraining ? "Running" : "Paused"}`,
+                    this.canvas.width - 140,
+                    225
+                );
+            }
         }
     }
 

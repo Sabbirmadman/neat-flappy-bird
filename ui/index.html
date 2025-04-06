@@ -11,6 +11,22 @@
 <body>
   <canvas id="game-canvas"></canvas>
 
+  <!-- Mobile Controls -->
+  <div id="mobile-controls">
+    <button id="jump-button" class="mobile-button">TAP</button>
+    <div id="mode-buttons">
+      <button id="human-mode-button" class="mobile-button">HUMAN</button>
+      <button id="ai-mode-button" class="mobile-button">AI</button>
+    </div>
+  </div>
+
+  <!-- Orientation Warning -->
+  <div id="orientation-warning">
+    <img src="../assets/rotate-device.svg" alt="Rotate Device">
+    <h2>Please rotate your device</h2>
+    <p>This game works best in landscape mode</p>
+  </div>
+
   <!-- Neural Network -->
   <script src="../neat/neural-network.js"></script>
   <script src="../neat/genome.js"></script>

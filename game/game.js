@@ -1,11 +1,11 @@
 import Bird from "./bird.js";
 import Ground from "./ground.js";
-import PipeManager from "./pipes.js";
+import PipeManager, { Pipe } from "./pipes.js";
 import Neat from "../neat/neat.js";
 
 class Game {
     constructor(canvas) {
-        this.populationSize = 500;
+        this.populationSize = 200;
         this.canvas = canvas;
         this.ctx = canvas.getContext("2d");
         this.ground = new Ground(canvas);
@@ -57,12 +57,23 @@ class Game {
                 this.neat.stopTraining();
                 this.restart();
             } else if (e.code === "KeyA") {
-                this.isHumanPlaying = false;
-                this.gameOver = false;
-                this.isAITraining = true;
-                this.restart();
-                this.neat.startTraining();
-                this.start();
+                // Only change mode if not already in AI mode to prevent multiple starts
+                if (this.isHumanPlaying || !this.isRunning) {
+                    this.isHumanPlaying = false;
+                    this.gameOver = false;
+                    this.isAITraining = true;
+
+                    // First start the game to ensure we have an active game loop
+                    if (!this.isRunning) {
+                        this.start();
+                    }
+
+                    // Then restart to initialize the AI properly
+                    this.restart();
+
+                    // Finally start AI training
+                    this.neat.startTraining();
+                }
             }
 
             if (e.code === "KeyT") {
@@ -88,11 +99,15 @@ class Game {
     }
 
     restart() {
-        this.isRunning = false;
+        // Don't set isRunning to false in AI mode to keep the game loop going
+        if (this.isHumanPlaying) {
+            this.isRunning = false;
+        }
+
+        this.pipeManager.reset(); // Always reset pipes regardless of mode
 
         if (this.isHumanPlaying) {
             this.bird = new Bird(this.canvas);
-            this.pipeManager.reset();
         } else {
             this.neat = new Neat(
                 this.canvas,
@@ -100,6 +115,9 @@ class Game {
                 this.pipeManager,
                 this.populationSize
             );
+
+            // Create initial pipes to give the AI birds something to respond to
+            this.pipeManager.pipes.push(new Pipe(this.canvas, this.ground));
         }
 
         this.gameOver = false;
@@ -107,9 +125,12 @@ class Game {
     }
 
     start() {
-        this.isRunning = true;
-        this.lastFrameTime = performance.now();
-        this.gameLoop(this.lastFrameTime);
+        // Only start if not already running
+        if (!this.isRunning) {
+            this.isRunning = true;
+            this.lastFrameTime = performance.now();
+            this.gameLoop(this.lastFrameTime);
+        }
     }
 
     update(currentTime) {
@@ -132,7 +153,15 @@ class Game {
             this.pipeManager.update(currentTime);
 
             if (this.isAITraining) {
+                // Make sure neat is updated every frame
                 this.neat.update(currentTime);
+
+                // Force at least one pipe if none exist
+                if (this.pipeManager.pipes.length === 0) {
+                    this.pipeManager.pipes.push(
+                        new Pipe(this.canvas, this.ground)
+                    );
+                }
             }
         }
 

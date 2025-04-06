@@ -7,7 +7,8 @@ class Population {
         this.generation = 1;
         this.bestScore = 0;
         this.bestFitness = 0;
-        this.mutationRate = Math.max(0.1, 0.25 - this.generation * 0.002);
+        // Lower initial mutation rate and slower decay
+        this.mutationRate = Math.max(0.1, 0.2 - this.generation * 0.001);
         this.initialize();
     }
 
@@ -42,12 +43,28 @@ class Population {
         }
 
         const newGenomes = [];
+        // Preserve more of the best genomes (elitism)
         if (currentBestGenome && this.genomes.length > 0) {
+            // Keep the very best genome without any mutation
             const eliteCopy = currentBestGenome.copy();
-            const eliteMutationRate = 0.02;
-            eliteCopy.mutate(eliteMutationRate);
             eliteCopy.isElite = true;
             newGenomes.push(eliteCopy);
+
+            // Also keep 2-3 more top genomes with slight mutation
+            const topGenomes = [...this.genomes]
+                .sort((a, b) => b.fitness - a.fitness)
+                .slice(0, 3);
+            for (
+                let i = 1;
+                i < topGenomes.length && newGenomes.length < this.size;
+                i++
+            ) {
+                if (topGenomes[i] && topGenomes[i].fitness > 0) {
+                    const topCopy = topGenomes[i].copy();
+                    topCopy.mutate(this.mutationRate * 0.3); // Much lower mutation for top performers
+                    newGenomes.push(topCopy);
+                }
+            }
         } else if (this.genomes.length > 0) {
             console.warn("No best genome identified for elitism.");
         }
@@ -87,7 +104,8 @@ class Population {
 
         this.genomes = newGenomes;
         this.generation++;
-        this.mutationRate = Math.max(0.08, 0.2 - this.generation * 0.003);
+        // Slower decay of mutation rate
+        this.mutationRate = Math.max(0.05, 0.2 - this.generation * 0.001);
     }
 
     crossover(parentA, parentB) {
@@ -130,6 +148,7 @@ class Population {
         }
     }
 
+    // Improved selection method using tournament selection
     selectGenome(totalFitness) {
         if (totalFitness <= 0 || !this.genomes || this.genomes.length === 0) {
             if (!this.genomes || this.genomes.length === 0) return null;
@@ -138,16 +157,26 @@ class Population {
             ];
         }
 
-        let random = Math.random() * totalFitness;
-        let cumulativeFitness = 0;
+        // Tournament selection - select best from a random subset
+        const tournamentSize = Math.max(
+            3,
+            Math.floor(this.genomes.length * 0.1)
+        );
+        let bestInTournament = null;
 
-        for (const genome of this.genomes) {
-            cumulativeFitness += genome.fitness;
-            if (random <= cumulativeFitness) {
-                return genome;
+        for (let i = 0; i < tournamentSize; i++) {
+            const randomIndex = Math.floor(Math.random() * this.genomes.length);
+            const candidate = this.genomes[randomIndex];
+
+            if (
+                !bestInTournament ||
+                candidate.fitness > bestInTournament.fitness
+            ) {
+                bestInTournament = candidate;
             }
         }
-        return this.genomes[this.genomes.length - 1];
+
+        return bestInTournament;
     }
 
     getBestGenome() {

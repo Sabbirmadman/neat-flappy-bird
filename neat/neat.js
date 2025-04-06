@@ -53,8 +53,13 @@ class Neat {
         if (eliteGenome) {
             eliteGenome.isElite = true;
         }
+
         for (const genome of genomes) {
             const bird = new Bird(this.canvas);
+            // Reset bird position to ensure it starts in a good position
+            bird.position.y = this.canvas.height / 2;
+            bird.velocity = 0;
+
             bird.brain = genome;
             bird.isDead = false;
 
@@ -69,7 +74,13 @@ class Neat {
     }
 
     startTraining() {
-        this.isTraining = true;
+        // Only start if not already training
+        if (!this.isTraining) {
+            this.isTraining = true;
+            // Reset birds to make sure they start properly
+            this.createBirds();
+            // Don't reset pipes here as it's already done in the game's restart method
+        }
     }
 
     stopTraining() {
@@ -112,17 +123,23 @@ class Neat {
 
                 // Think and decide whether to jump
                 if (nearestPipe) {
-                    // Calculate the 4 inputs we want:
-                    // 1. Distance to next pipe (normalized)
-                    const horizontalDistance =
-                        (nearestPipe.position.x - bird.position.x) /
-                        this.canvas.width;
+                    // Calculate normalized horizontal distance (0 to 1)
+                    const horizontalDistance = Math.max(
+                        0,
+                        Math.min(
+                            1,
+                            (nearestPipe.position.x - bird.position.x) /
+                                (this.canvas.width * 0.5)
+                        )
+                    );
 
-                    // Store the horizontal distance for fitness calculation
+                    // Store for fitness calculation
                     bird.brain.horizontalDistanceToPipe = horizontalDistance;
 
-                    // Rest of your existing code...
+                    // Normalize velocity to range -1 to 1
                     const normalizedVelocity = bird.velocity / 10;
+
+                    // Calculate vertical distances to pipes
                     const verticalDistanceToTopPipe =
                         (bird.position.y - nearestPipe.gapPosition) /
                         this.canvas.height;
@@ -132,6 +149,13 @@ class Neat {
                             bird.position.y) /
                         this.canvas.height;
 
+                    // Calculate distance to gap center
+                    const gapCenterY =
+                        nearestPipe.gapPosition + nearestPipe.gap / 2;
+                    const distanceToGapCenter =
+                        (bird.position.y - gapCenterY) /
+                        (this.canvas.height / 2);
+
                     const inputs = [
                         horizontalDistance,
                         normalizedVelocity,
@@ -139,15 +163,10 @@ class Neat {
                         verticalDistanceToBottomPipe,
                     ];
 
-                    // Calculate bird's distance to the center of the pipe gap
-                    // Higher value = closer to optimal position
-                    const gapCenterY =
-                        nearestPipe.gapPosition + nearestPipe.gap / 2;
+                    // Store normalized distance to gap center (1 = perfect alignment, 0 = furthest away)
                     const verticalDistToGapCenter =
                         Math.abs(bird.position.y - gapCenterY) /
                         this.canvas.height;
-
-                    // Store normalized distance to gap center (1 = perfect alignment, 0 = furthest away)
                     bird.brain.distanceToNextPipeGap =
                         1 - verticalDistToGapCenter;
 
@@ -155,6 +174,9 @@ class Neat {
                     if (bird.brain.think(inputs)) {
                         bird.jump();
                     }
+
+                    // Track how many frames this bird has lived
+                    bird.brain.lifespan++;
                 }
 
                 // Update score

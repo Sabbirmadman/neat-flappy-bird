@@ -32,24 +32,40 @@ class Genome {
     }
 
     calculateFitness() {
-        let scoreFitness = this.score * 2;
-        let lifespanFitness = this.lifespan * 0.2;
-        let distanceFitness = (this.distanceToNextPipeGap || 0) * 3;
-        let proximityPenalty = 0;
+        // Significant reward for passing pipes
+        let scoreFitness = this.score * 5;
+
+        // Reward for staying alive
+        let lifespanFitness = this.lifespan * 0.1;
+
+        // Reward for positioning near the gap center (up to 3 points)
+        let alignmentFitness = (this.distanceToNextPipeGap || 0) * 3;
+
+        // Horizontal progress reward - encourages birds to move forward even if they don't pass a pipe
+        let distanceReward = 0;
         if (this.horizontalDistanceToPipe !== undefined) {
-            const closeThreshold = 0.15;
-            if (this.horizontalDistanceToPipe < closeThreshold) {
-                proximityPenalty =
-                    -2 *
-                    Math.pow(
-                        1 - this.horizontalDistanceToPipe / closeThreshold,
-                        2
-                    );
+            // Higher reward as bird gets closer to the pipe
+            distanceReward =
+                (1 - Math.max(0, Math.min(1, this.horizontalDistanceToPipe))) *
+                2;
+
+            // Bonus for being very close to passing a pipe
+            if (this.horizontalDistanceToPipe < 0.1) {
+                distanceReward += 1;
             }
         }
+
         this.fitness =
-            scoreFitness + lifespanFitness + distanceFitness + proximityPenalty;
+            scoreFitness + lifespanFitness + alignmentFitness + distanceReward;
+
+        // Apply bonus multiplier for birds that pass at least one pipe
+        if (this.score > 0) {
+            this.fitness *= 1 + this.score * 0.1; // Bonus increases with more pipes passed
+        }
+
+        // Ensure minimum fitness
         if (this.fitness < 0.1) this.fitness = 0.1;
+
         return this.fitness;
     }
 }

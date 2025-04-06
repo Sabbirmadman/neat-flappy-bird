@@ -64,6 +64,8 @@ class Pipe {
 
         const birdRight = bird.position.x + bird.radius;
         const birdLeft = bird.position.x - bird.radius;
+
+        // Check if bird is horizontally aligned with pipe
         if (
             !(
                 birdRight > this.position.x &&
@@ -72,20 +74,18 @@ class Pipe {
         ) {
             return false;
         }
+
         const birdTop = bird.position.y - bird.radius;
         const birdBottom = bird.position.y + bird.radius;
 
-        if (
-            birdRight > this.position.x &&
-            birdLeft < this.position.x + this.width
-        ) {
-            if (birdTop < this.gapPosition) {
-                return true;
-            }
+        // Check vertical collision with top pipe
+        if (birdTop < this.gapPosition) {
+            return true;
+        }
 
-            if (birdBottom > this.gapPosition + this.gap) {
-                return true;
-            }
+        // Check vertical collision with bottom pipe
+        if (birdBottom > this.gapPosition + this.gap) {
+            return true;
         }
 
         return false;
@@ -101,21 +101,23 @@ class PipeManager {
         this.canvas = canvas;
         this.ground = ground;
         this.pipes = [];
-        this.pipeSpawnInterval = 2000;
-        this.lastSpawnTime = 0;
+        this.pipeSpawnInterval = 200; // Increased from 120 to 200 for more spacing
+        this.frameCount = 0;
         this.score = 0;
     }
 
     reset() {
         this.pipes = [];
-        this.lastSpawnTime = 0;
+        this.frameCount = 0;
         this.score = 0;
     }
 
     update(currentTime) {
-        if (currentTime - this.lastSpawnTime > this.pipeSpawnInterval) {
+        this.frameCount++;
+
+        if (this.frameCount >= this.pipeSpawnInterval) {
             this.pipes.push(new Pipe(this.canvas, this.ground));
-            this.lastSpawnTime = currentTime;
+            this.frameCount = 0;
         }
 
         for (let i = this.pipes.length - 1; i >= 0; i--) {
@@ -171,3 +173,4 @@ class PipeManager {
 }
 
 export default PipeManager;
+export { Pipe };

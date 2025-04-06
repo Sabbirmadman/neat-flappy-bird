@@ -15,9 +15,9 @@ class Bird {
         this.color = `hsl(${Math.random() * 360}, 100%, 50%)`;
         this.borderColor = `hsl(${Math.random() * 360}, 100%, 30%)`;
 
-        // Load bird image
+        // Load bird image with correct path
         this.image = new Image();
-        this.image.src = "bird.png";
+        this.image.src = "../assets/bird.png";
 
         // Bird dimensions based on image size
         this.width = this.radius * 2;

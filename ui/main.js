@@ -13,7 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Load the background image before initializing the game
     const backgroundImage = new Image();
-    backgroundImage.src = "background.webp";
+    backgroundImage.src = "../assets/background.webp";
 
     backgroundImage.onload = () => {
         console.log("Background image loaded");

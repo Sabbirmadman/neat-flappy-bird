@@ -1,10 +1,9 @@
 document.addEventListener("DOMContentLoaded", () => {
     console.log("DOM loaded");
     const canvas = document.getElementById("game-canvas");
-    const jumpButton = document.getElementById("jump-button");
     const humanModeButton = document.getElementById("human-mode-button");
     const aiModeButton = document.getElementById("ai-mode-button");
-    const orientationWarning = document.getElementById("orientation-warning");
+    const reloadButton = document.getElementById("reload-button");
 
     if (!canvas) {
         console.error("Canvas element not found!");
@@ -21,28 +20,12 @@ document.addEventListener("DOMContentLoaded", () => {
     // Set up canvas dimensions based on device
     function setupCanvasDimensions() {
         if (isMobile) {
-            // For mobile, enforce 16:9 aspect ratio
+            // For mobile, adjust to fit the screen while maintaining aspect ratio
             const screenWidth = Math.min(window.innerWidth, 800);
             const screenHeight = Math.min(window.innerHeight, 800);
 
-            if (window.innerWidth > window.innerHeight) {
-                // Landscape mode
-                canvas.width = screenHeight * (16 / 9);
-                canvas.height = screenHeight;
-
-                // Make sure we don't exceed screen width
-                if (canvas.width > window.innerWidth) {
-                    canvas.width = screenWidth;
-                    canvas.height = screenWidth * (9 / 16);
-                }
-
-                orientationWarning.style.display = "none";
-            } else {
-                // Portrait mode - still use landscape dimensions but show warning
-                canvas.width = screenWidth;
-                canvas.height = screenWidth * (9 / 16);
-                orientationWarning.style.display = "flex";
-            }
+            canvas.width = screenWidth;
+            canvas.height = screenHeight;
         } else {
             // Desktop: Square canvas (800x800)
             canvas.width = 800;
@@ -55,7 +38,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Handle orientation changes
     window.addEventListener("resize", setupCanvasDimensions);
-    window.addEventListener("orientationchange", setupCanvasDimensions);
 
     // Load the background image before initializing the game
     const backgroundImage = new Image();
@@ -67,32 +49,29 @@ document.addEventListener("DOMContentLoaded", () => {
         console.log("Background image loaded");
         console.log("Creating game instance");
         // Use Game from the global scope
-        game = new window.Game(canvas, backgroundImage);
+        game = new window.Game(canvas, backgroundImage, isMobile);
         console.log("Game instance created", game);
 
         // Show instructions
         const ctx = canvas.getContext("2d");
         // Draw background first
         ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = "black";
-        ctx.font = "24px Arial";
 
-        if (isMobile) {
-            ctx.fillText(
-                "Tap the JUMP button",
-                canvas.width / 2 - 120,
-                canvas.height / 2 - 30
+        if (!isMobile) {
+            // Only show instruction text on desktop
+            ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+            ctx.fillRect(
+                canvas.width / 2 - 180,
+                canvas.height / 2 - 60,
+                360,
+                120
             );
-            ctx.fillText(
-                "Use HUMAN/AI buttons to switch",
-                canvas.width / 2 - 170,
-                canvas.height / 2 + 20
-            );
-        } else {
+            ctx.fillStyle = "white";
+            ctx.font = "24px Arial";
             ctx.fillText(
                 "Press SPACE to jump (Human)",
                 canvas.width / 2 - 150,
-                canvas.height / 2 - 30
+                canvas.height / 2 - 20
             );
             ctx.fillText(
                 "Press H/A to switch modes",
@@ -106,36 +85,42 @@ document.addEventListener("DOMContentLoaded", () => {
         if (isMobile) {
             setupMobileControls();
         }
+
+        // Setup game over monitoring to show reload button
+        setInterval(() => {
+            if (game && game.isHumanPlaying && game.gameOver) {
+                reloadButton.style.display = "block";
+            } else {
+                reloadButton.style.display = "none";
+            }
+        }, 100);
     };
 
     backgroundImage.onerror = () => {
         console.error("Failed to load background image");
         // Initialize game without background image as fallback
-        game = new window.Game(canvas);
+        game = new window.Game(canvas, null, isMobile);
 
         // Show instructions with fallback background
         const ctx = canvas.getContext("2d");
         ctx.fillStyle = "skyblue";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = "black";
-        ctx.font = "24px Arial";
 
-        if (isMobile) {
-            ctx.fillText(
-                "Tap the JUMP button",
-                canvas.width / 2 - 120,
-                canvas.height / 2 - 30
+        if (!isMobile) {
+            // Only show instruction text on desktop
+            ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+            ctx.fillRect(
+                canvas.width / 2 - 180,
+                canvas.height / 2 - 60,
+                360,
+                120
             );
-            ctx.fillText(
-                "Use HUMAN/AI buttons to switch",
-                canvas.width / 2 - 170,
-                canvas.height / 2 + 20
-            );
-        } else {
+            ctx.fillStyle = "white";
+            ctx.font = "24px Arial";
             ctx.fillText(
                 "Press SPACE to jump (Human)",
                 canvas.width / 2 - 150,
-                canvas.height / 2 - 30
+                canvas.height / 2 - 20
             );
             ctx.fillText(
                 "Press H/A to switch modes",
@@ -149,11 +134,20 @@ document.addEventListener("DOMContentLoaded", () => {
         if (isMobile) {
             setupMobileControls();
         }
+
+        // Setup game over monitoring to show reload button
+        setInterval(() => {
+            if (game && game.isHumanPlaying && game.gameOver) {
+                reloadButton.style.display = "block";
+            } else {
+                reloadButton.style.display = "none";
+            }
+        }, 100);
     };
 
     function setupMobileControls() {
-        // Handle jump button
-        jumpButton.addEventListener(
+        // Handle canvas tap for jumping
+        canvas.addEventListener(
             "touchstart",
             function (e) {
                 e.preventDefault();
@@ -233,6 +227,19 @@ document.addEventListener("DOMContentLoaded", () => {
                         // Start AI training
                         game.neat.startTraining();
                     }
+                }
+            },
+            { passive: false }
+        );
+
+        // Handle reload button
+        reloadButton.addEventListener(
+            "touchstart",
+            function (e) {
+                e.preventDefault();
+                if (game && game.isHumanPlaying && game.gameOver) {
+                    game.restart();
+                    reloadButton.style.display = "none";
                 }
             },
             { passive: false }

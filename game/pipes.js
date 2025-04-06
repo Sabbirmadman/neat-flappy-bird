@@ -63,8 +63,15 @@ class Pipe {
     checkCollision(bird) {
         if (bird.isDead) return false;
 
-        const birdRight = bird.position.x + bird.radius;
-        const birdLeft = bird.position.x - bird.radius;
+        // Use a smaller horizontal radius and slightly larger vertical radius
+        // to better match the oval shape of the bird
+        const horizontalRadius = bird.radius * 0.8; // 20% smaller horizontally
+        const verticalRadius = bird.radius * 0.9; // 10% smaller vertically
+
+        const birdRight = bird.position.x + horizontalRadius;
+        const birdLeft = bird.position.x - horizontalRadius;
+        const birdTop = bird.position.y - verticalRadius;
+        const birdBottom = bird.position.y + verticalRadius;
 
         // Check if bird is horizontally aligned with pipe
         if (
@@ -75,9 +82,6 @@ class Pipe {
         ) {
             return false;
         }
-
-        const birdTop = bird.position.y - bird.radius;
-        const birdBottom = bird.position.y + bird.radius;
 
         // Check vertical collision with top pipe
         if (birdTop < this.gapPosition) {
@@ -102,7 +106,7 @@ class PipeManager {
         this.canvas = canvas;
         this.ground = ground;
         this.pipes = [];
-        this.pipeSpawnInterval = 200; // Increased from 120 to 200 for more spacing
+        this.pipeSpawnInterval = 150;
         this.frameCount = 0;
         this.score = 0;
     }

@@ -45,78 +45,53 @@ body {
 
 /* Mobile Controls */
 #mobile-controls {
-    position: absolute;
+    position: fixed;
     bottom: 20px;
     display: none; /* Hidden by default, shown on mobile */
     width: 100%;
     justify-content: center;
-    gap: 10px;
+    gap: 15px;
     z-index: 100;
+    touch-action: manipulation;
 }
 
 .mobile-button {
     background-color: rgba(255, 255, 255, 0.3);
     border: 2px solid white;
     color: white;
-    padding: 15px 25px;
+    padding: 12px 20px;
     border-radius: 50px;
-    font-size: 18px;
+    font-size: 16px;
     font-weight: bold;
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
     user-select: none;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
 .mobile-button:active {
     background-color: rgba(255, 255, 255, 0.5);
     transform: scale(0.95);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-#jump-button {
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+#reload-button {
+    display: none; /* Hidden by default, shown when game over */
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, 70px);
+    padding: 15px 30px;
+    font-size: 20px;
+    background-color: rgba(255, 0, 0, 0.6);
+    border: 3px solid white;
+    z-index: 200;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5);
 }
 
 #mode-buttons {
     display: flex;
-    gap: 10px;
-}
-
-#orientation-warning {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.9);
-    color: white;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-    z-index: 1000;
-    text-align: center;
-    padding: 20px;
-}
-
-#orientation-warning img {
-    width: 60px;
-    height: 60px;
-    margin-bottom: 20px;
-    animation: rotate 2s infinite;
-}
-
-@keyframes rotate {
-    0% {
-        transform: rotate(0deg);
-    }
-    100% {
-        transform: rotate(90deg);
-    }
+    gap: 15px;
 }
 
 /* Media query for mobile devices */

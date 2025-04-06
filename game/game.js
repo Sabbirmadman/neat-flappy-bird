@@ -1,5 +1,5 @@
 class Game {
-    constructor(canvas, backgroundImage) {
+    constructor(canvas, backgroundImage, isMobile = false) {
         this.populationSize = 500;
         this.canvas = canvas;
         this.ctx = canvas.getContext("2d");
@@ -23,15 +23,11 @@ class Game {
         this.frameCount = 0;
         this.lastFpsUpdate = 0;
         this.fps = 0;
+        // Store mobile status
+        this.isMobile = isMobile;
         // Keep rendering options but remove game speed
         this.renderAllBirds = true;
         this.maxRenderBirds = 20;
-
-        // Detect if we're on a mobile device
-        this.isMobile =
-            /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ||
-            window.innerWidth <= 768;
-
         this.bindEvents();
     }
 
@@ -288,13 +284,17 @@ class Game {
         if (this.isHumanPlaying) {
             this.bird.draw();
 
-            this.ctx.fillStyle = "black";
+            // Score display
+            this.ctx.fillStyle = "white";
+            this.ctx.strokeStyle = "black";
+            this.ctx.lineWidth = 5;
             this.ctx.font = "36px Arial";
-            this.ctx.fillText(
-                this.pipeManager.getScore().toString(),
-                this.canvas.width / 2 - 15,
-                50
-            );
+            const scoreText = this.pipeManager.getScore().toString();
+            const textWidth = this.ctx.measureText(scoreText).width;
+            const x = this.canvas.width / 2 - textWidth / 2;
+
+            this.ctx.strokeText(scoreText, x, 50);
+            this.ctx.fillText(scoreText, x, 50);
 
             if (this.gameOver) {
                 this.ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
@@ -302,7 +302,7 @@ class Game {
                     this.canvas.width / 2 - 150,
                     this.canvas.height / 2 - 100,
                     300,
-                    200
+                    180
                 );
 
                 this.ctx.fillStyle = "white";
@@ -313,45 +313,27 @@ class Game {
                     this.canvas.height / 2 - 50
                 );
 
-                this.ctx.font = "24px Arial";
-                if (this.isMobile) {
-                    this.ctx.fillText(
-                        "Tap HUMAN to restart",
-                        this.canvas.width / 2 - 110,
-                        this.canvas.height / 2
-                    );
-                } else {
-                    this.ctx.fillText(
-                        "Press R to restart",
-                        this.canvas.width / 2 - 80,
-                        this.canvas.height / 2
-                    );
-                }
-
                 this.ctx.font = "30px Arial";
                 this.ctx.fillText(
                     "Score: " + this.pipeManager.getScore(),
                     this.canvas.width / 2 - 60,
-                    this.canvas.height / 2 + 50
-                );
-            } else if (!this.isRunning) {
-                this.ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
-                this.ctx.fillRect(
-                    this.canvas.width / 2 - 150,
-                    this.canvas.height / 2 - 50,
-                    300,
-                    100
+                    this.canvas.height / 2 + 10
                 );
 
-                this.ctx.fillStyle = "white";
-                this.ctx.font = "24px Arial";
-                if (this.isMobile) {
-                    this.ctx.fillText(
-                        "Tap JUMP to start",
-                        this.canvas.width / 2 - 100,
-                        this.canvas.height / 2
+                // No need for restart text on mobile - we have the reload button
+            } else if (!this.isRunning) {
+                if (!this.isMobile) {
+                    // Only show text instructions on desktop
+                    this.ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+                    this.ctx.fillRect(
+                        this.canvas.width / 2 - 150,
+                        this.canvas.height / 2 - 50,
+                        300,
+                        100
                     );
-                } else {
+
+                    this.ctx.fillStyle = "white";
+                    this.ctx.font = "24px Arial";
                     this.ctx.fillText(
                         "Press SPACE to start",
                         this.canvas.width / 2 - 110,
@@ -374,32 +356,15 @@ class Game {
 
         this.ground.draw();
 
-        this.ctx.fillStyle = "white";
-        this.ctx.font = "16px Arial";
-        this.ctx.fillText(`FPS: ${this.fps}`, this.canvas.width - 80, 30);
+        // Only show FPS counter and controls info on desktop
+        if (!this.isMobile) {
+            this.ctx.fillStyle = "white";
+            this.ctx.font = "16px Arial";
+            this.ctx.fillText(`FPS: ${this.fps}`, this.canvas.width - 80, 30);
 
-        if (!this.isHumanPlaying) {
-            // Update controls display - remove speed controls
-            this.ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
-
-            if (this.isMobile) {
-                // Smaller controls panel for mobile
-                this.ctx.fillRect(this.canvas.width - 130, 50, 120, 140);
-                this.ctx.fillStyle = "white";
-                this.ctx.font = "12px Arial";
-                this.ctx.fillText("Controls:", this.canvas.width - 110, 70);
-                this.ctx.fillText(
-                    "HUMAN: Human mode",
-                    this.canvas.width - 120,
-                    90
-                );
-                this.ctx.fillText("AI: AI mode", this.canvas.width - 120, 110);
-                this.ctx.fillText(
-                    `Mode: ${this.isAITraining ? "AI" : "HUMAN"}`,
-                    this.canvas.width - 120,
-                    170
-                );
-            } else {
+            if (!this.isHumanPlaying) {
+                // Update controls display - desktop only
+                this.ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
                 this.ctx.fillRect(this.canvas.width - 160, 50, 190, 190);
                 this.ctx.fillStyle = "white";
                 this.ctx.font = "12px Arial";
@@ -431,6 +396,14 @@ class Game {
                     225
                 );
             }
+        } else if (!this.isHumanPlaying) {
+            // Minimal mode indicator for AI on mobile
+            this.ctx.fillStyle = "white";
+            this.ctx.strokeStyle = "black";
+            this.ctx.lineWidth = 2;
+            this.ctx.font = "16px Arial";
+            this.ctx.strokeText("AI MODE", 20, 30);
+            this.ctx.fillText("AI MODE", 20, 30);
         }
     }
 

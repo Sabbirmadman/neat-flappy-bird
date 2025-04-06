@@ -5,7 +5,7 @@ import Neat from "../neat/neat.js";
 
 class Game {
     constructor(canvas) {
-        this.populationSize = 200;
+        this.populationSize = 500;
         this.canvas = canvas;
         this.ctx = canvas.getContext("2d");
         this.ground = new Ground(canvas);
@@ -61,21 +61,34 @@ class Game {
                 }
             }
 
-            // AI training controls
-            if (e.code === "KeyT") {
-                this.toggleAITraining();
-            }
-
             // Switch between human and AI mode
             if (e.code === "KeyH") {
                 this.isHumanPlaying = true;
+                this.isAITraining = false; // Make sure AI training stops
                 this.neat.stopTraining();
-                this.restart();
+                this.restart(); // Restart in human mode
+                // Don't automatically start human mode, wait for SPACE
             } else if (e.code === "KeyA") {
                 this.isHumanPlaying = false;
-                this.gameOver = false;
-                this.restart();
-                this.start();
+                this.gameOver = false; // Reset game over
+                this.isAITraining = true; // <-- ADD THIS LINE
+                this.restart(); // Restart in AI mode (creates new NEAT)
+                this.neat.startTraining(); // <-- ADD THIS LINE (to ensure neat.isTraining is true)
+                this.start(); // Start the game loop
+            }
+
+            // AI training controls - T can now be a toggle/pause
+            if (e.code === "KeyT") {
+                if (!this.isHumanPlaying) {
+                    // Only affect AI mode
+                    this.isAITraining = !this.isAITraining; // Toggle the flag
+                    if (this.isAITraining) {
+                        this.neat.startTraining();
+                        if (!this.isRunning) this.start(); // Start if paused
+                    } else {
+                        this.neat.stopTraining();
+                    }
+                }
             }
         });
 
@@ -113,19 +126,19 @@ class Game {
         this.gameLoop(this.lastFrameTime);
     }
 
-    toggleAITraining() {
-        if (!this.isAITraining) {
-            this.isAITraining = true;
-            this.isHumanPlaying = false;
-            this.gameOver = false;
-            this.restart();
-            this.neat.startTraining();
-            this.start();
-        } else {
-            this.isAITraining = false;
-            this.neat.stopTraining();
-        }
-    }
+    // toggleAITraining() {
+    //     if (!this.isAITraining) {
+    //         this.isAITraining = true;
+    //         this.isHumanPlaying = false;
+    //         this.gameOver = false;
+    //         this.restart();
+    //         this.neat.startTraining();
+    //         this.start();
+    //     } else {
+    //         this.isAITraining = false;
+    //         this.neat.stopTraining();
+    //     }
+    // }
 
     update(currentTime) {
         if (this.isHumanPlaying) {
@@ -233,14 +246,14 @@ class Game {
             this.ctx.font = "12px Arial";
             this.ctx.fillText("Controls:", this.canvas.width - 140, 75);
             this.ctx.fillText(
-                "T: Toggle training",
+                "T: Pause/Resume AI",
                 this.canvas.width - 140,
                 100
             );
             this.ctx.fillText("H: Human mode", this.canvas.width - 140, 125);
             this.ctx.fillText("A: AI mode", this.canvas.width - 140, 150);
             this.ctx.fillText(
-                `Mode: ${this.isAITraining ? "Training" : "Paused"}`,
+                `Mode: AI ${this.isAITraining ? "Running" : "Paused"}`,
                 this.canvas.width - 140,
                 175
             );

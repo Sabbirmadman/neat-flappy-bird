@@ -4,8 +4,9 @@ class Pipe {
         this.ctx = canvas.getContext("2d");
         this.ground = ground;
 
-        this.width = 80;
-        this.gap = 200; // Gap between top and bottom pipes
+        this.width = 60;
+        // random gaps between pipes and ground
+        this.gap = 150;
         this.speed = 1.5;
         this.passed = false;
 

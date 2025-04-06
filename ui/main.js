@@ -29,14 +29,9 @@ document.addEventListener("DOMContentLoaded", () => {
         canvas.height / 2 - 30
     );
     ctx.fillText(
-        "Press T to start AI training",
-        canvas.width / 2 - 150,
-        canvas.height / 2 + 10
-    );
-    ctx.fillText(
         "Press H/A to switch modes",
         canvas.width / 2 - 150,
-        canvas.height / 2 + 50
+        canvas.height / 2 + 20
     );
     console.log("Instructions drawn");
 });

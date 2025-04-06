@@ -12,7 +12,8 @@ class Bird {
         this.jumpStrength = -6; // Reduced strength for more control
         this.brain = null; // Reference to genome for AI birds
         this.isDead = false; // Track if bird is alive
-        this.color = "yellow"; // Default color
+        this.color = `hsl(${Math.random() * 360}, 100%, 50%)`;
+        this.borderColor = `hsl(${Math.random() * 360}, 100%, 30%)`;
     }
 
     reset() {

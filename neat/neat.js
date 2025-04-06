@@ -118,15 +118,14 @@ class Neat {
                         (nearestPipe.position.x - bird.position.x) /
                         this.canvas.width;
 
-                    // 2. Bird's vertical velocity (normalized)
-                    const normalizedVelocity = bird.velocity / 10;
+                    // Store the horizontal distance for fitness calculation
+                    bird.brain.horizontalDistanceToPipe = horizontalDistance;
 
-                    // 3. Vertical distance to top pipe (normalized)
+                    // Rest of your existing code...
+                    const normalizedVelocity = bird.velocity / 10;
                     const verticalDistanceToTopPipe =
                         (bird.position.y - nearestPipe.gapPosition) /
                         this.canvas.height;
-
-                    // 4. Vertical distance to bottom pipe (normalized)
                     const verticalDistanceToBottomPipe =
                         (nearestPipe.gapPosition +
                             nearestPipe.gap -

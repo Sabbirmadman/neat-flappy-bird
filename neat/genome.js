@@ -9,6 +9,11 @@ class Genome {
         this.isElite = false;
         this.horizontalDistanceToPipe = undefined;
         this.lastInputs = [];
+
+        // Add jump cooldown properties
+        this.lastJumpTime = 0;
+        this.jumpCooldown = 15; // frames before allowing another jump
+        this.verticalPosition = 0; // Track vertical position for fitness calculation
     }
 
     copy() {
@@ -26,18 +31,40 @@ class Genome {
         genome.score = 0;
         genome.lifespan = 0;
         genome.fitness = 0;
+        genome.lastJumpTime = 0;
+        genome.jumpCooldown = this.jumpCooldown;
         return genome;
     }
 
     think(inputs) {
         this.lastInputs = [...inputs];
+        // Store the vertical position for fitness calculation
+        this.verticalPosition = inputs[2]; // vertical distance to top pipe
+
         // Run inference with TensorFlow
         const output = this.brain.feedForward(inputs);
-        return output[0] > 0.5;
+
+        // Check if cooldown has elapsed
+        const shouldJump = output[0] > 0.5;
+        if (shouldJump) {
+            // Only allow jumping if cooldown has elapsed
+            if (this.lifespan - this.lastJumpTime >= this.jumpCooldown) {
+                this.lastJumpTime = this.lifespan;
+                return true;
+            }
+            return false;
+        }
+        return false;
     }
 
     mutate(rate) {
         this.brain.mutate(rate);
+        // Occasionally mutate the jump cooldown
+        if (Math.random() < rate * 0.5) {
+            this.jumpCooldown += Math.floor(Math.random() * 7) - 3; // +/- up to 3 frames
+            // Keep cooldown within reasonable bounds
+            this.jumpCooldown = Math.max(5, Math.min(30, this.jumpCooldown));
+        }
     }
 
     calculateFitness() {
@@ -64,8 +91,19 @@ class Genome {
             }
         }
 
+        // Penalty for staying at the top of the screen
+        let topScreenPenalty = 0;
+        if (this.verticalPosition < -0.4) {
+            // Apply increasing penalty the closer to the top
+            topScreenPenalty = Math.abs(this.verticalPosition + 0.4) * 2;
+        }
+
         this.fitness =
-            scoreFitness + lifespanFitness + alignmentFitness + distanceReward;
+            scoreFitness +
+            lifespanFitness +
+            alignmentFitness +
+            distanceReward -
+            topScreenPenalty;
 
         // Apply bonus multiplier for birds that pass at least one pipe
         if (this.score > 0) {

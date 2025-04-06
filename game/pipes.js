@@ -5,7 +5,7 @@ class Pipe {
         this.ground = ground;
 
         this.width = 60;
-        this.gap = 150;
+        this.gap = 180;
         this.speed = 1.5;
         this.passed = false;
 

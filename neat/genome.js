@@ -18,15 +18,8 @@ class Genome {
 
     copy() {
         let genome = new Genome();
-        try {
-            // Dispose old brain to prevent memory leak
-            genome.brain.dispose();
-            genome.brain = this.brain.copy();
-        } catch (error) {
-            console.error("Error copying genome:", error);
-            // Create a fresh brain if copying fails
-            genome.brain = new NeuralNetwork(4, 8, 1);
-        }
+        // No need for try/catch and dispose with pure JS implementation
+        genome.brain = this.brain.copy();
         genome.isElite = this.isElite;
         genome.score = 0;
         genome.lifespan = 0;
@@ -41,7 +34,7 @@ class Genome {
         // Store the vertical position for fitness calculation
         this.verticalPosition = inputs[2]; // vertical distance to top pipe
 
-        // Run inference with TensorFlow
+        // Run inference with pure JS neural network
         const output = this.brain.feedForward(inputs);
 
         // Check if cooldown has elapsed
@@ -116,11 +109,9 @@ class Genome {
         return this.fitness;
     }
 
-    // Clean up resources when genome is no longer needed
+    // Simplified dispose method - no TensorFlow resources to clean up
     dispose() {
-        if (this.brain) {
-            this.brain.dispose();
-        }
+        // Nothing to dispose in pure JS implementation
     }
 }
 

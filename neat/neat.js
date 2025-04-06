@@ -19,35 +19,11 @@ class Neat {
         // Store the best bird for visualization
         this.bestBird = null;
         this.showNetworkVisualization = true;
-
-        // Tensor memory management
-        this.setupMemoryManagement();
     }
 
-    // Set up memory management for TensorFlow
+    // Remove TensorFlow memory management
     setupMemoryManagement() {
-        // Monitor memory usage periodically
-        this.memoryCheckInterval = setInterval(() => {
-            if (window.tf && this.isTraining) {
-                const memoryInfo = tf.memory();
-                console.log(
-                    "TF Memory:",
-                    "Tensors:",
-                    memoryInfo.numTensors,
-                    "Bytes:",
-                    Math.round(memoryInfo.numBytes / 1024),
-                    "KB"
-                );
-
-                // Force garbage collection if too many tensors
-                if (memoryInfo.numTensors > 5000) {
-                    console.warn(
-                        "Too many tensors, forcing garbage collection"
-                    );
-                    tf.tidy(() => {}); // Empty tidy forces disposal of unused tensors
-                }
-            }
-        }, 10000); // Check every 10 seconds
+        // Not needed with pure JS implementation
     }
 
     // Toggle network visualization
@@ -250,11 +226,6 @@ class Neat {
     evolve() {
         console.log("Evolving to next generation...");
 
-        // Force garbage collection before evolution
-        if (window.tf) {
-            tf.engine().startScope(); // Start a new scope to track tensors
-        }
-
         try {
             // Calculate final fitness for all birds before evolution
             for (const bird of this.birds) {
@@ -282,13 +253,6 @@ class Neat {
             }
             this.population = new Population(this.birds.length || 20);
             this.createBirds();
-        } finally {
-            // End the scope to clean up unused tensors
-            if (window.tf) {
-                tf.engine().endScope();
-                // Force garbage collection
-                tf.tidy(() => {});
-            }
         }
 
         // Ensure isTraining remains true to continue evolution
@@ -498,7 +462,7 @@ class Neat {
         return this.population.getBestGenome();
     }
 
-    // Method to clean up resources when the NEAT instance is no longer needed
+    // Simplified dispose method - no TensorFlow resources to clean up
     dispose() {
         if (this.memoryCheckInterval) {
             clearInterval(this.memoryCheckInterval);
@@ -508,11 +472,6 @@ class Neat {
 
         if (this.population) {
             this.population.dispose();
-        }
-
-        // Run garbage collection
-        if (window.tf) {
-            tf.tidy(() => {});
         }
     }
 }

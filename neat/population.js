@@ -151,40 +151,49 @@ class Population {
     crossover(parentA, parentB) {
         const child = new Genome();
 
-        // Use tf.tidy to clean up tensors
-        tf.tidy(() => {
-            try {
-                // Get weights from both parents' models
-                const weightsA = parentA.brain.model.getWeights();
-                const weightsB = parentB.brain.model.getWeights();
+        // Get neural network from parents
+        const brainA = parentA.brain;
+        const brainB = parentB.brain;
 
-                // Create new weights by crossover
-                const crossedWeights = weightsA.map((tensorA, i) => {
-                    const tensorB = weightsB[i];
-                    return tf.tidy(() => {
-                        const shapeA = tensorA.shape;
-                        const valuesA = tensorA.dataSync().slice();
-                        const valuesB = tensorB.dataSync().slice();
+        // Create new neural network with same architecture
+        const childBrain = child.brain;
 
-                        // Create new array with crossed-over values
-                        const newValues = new Float32Array(valuesA.length);
-                        for (let j = 0; j < valuesA.length; j++) {
-                            newValues[j] =
-                                Math.random() < 0.5 ? valuesA[j] : valuesB[j];
-                        }
-
-                        return tf.tensor(newValues, shapeA);
-                    });
-                });
-
-                // Set the new weights to the child's model
-                child.brain.model.setWeights(crossedWeights);
-            } catch (error) {
-                console.error("Error during crossover:", error);
-                // Create a fresh genome if crossover fails
-                child.brain = new NeuralNetwork(4, 8, 1);
+        // Crossover weights from input to hidden layer
+        for (let i = 0; i < brainA.weightsInputHidden.length; i++) {
+            for (let j = 0; j < brainA.weightsInputHidden[i].length; j++) {
+                // Choose weight from either parent A or B randomly
+                childBrain.weightsInputHidden[i][j] =
+                    Math.random() < 0.5
+                        ? brainA.weightsInputHidden[i][j]
+                        : brainB.weightsInputHidden[i][j];
             }
-        });
+        }
+
+        // Crossover biases for hidden layer
+        for (let i = 0; i < brainA.biasesHidden.length; i++) {
+            childBrain.biasesHidden[i] =
+                Math.random() < 0.5
+                    ? brainA.biasesHidden[i]
+                    : brainB.biasesHidden[i];
+        }
+
+        // Crossover weights from hidden to output layer
+        for (let i = 0; i < brainA.weightsHiddenOutput.length; i++) {
+            for (let j = 0; j < brainA.weightsHiddenOutput[i].length; j++) {
+                childBrain.weightsHiddenOutput[i][j] =
+                    Math.random() < 0.5
+                        ? brainA.weightsHiddenOutput[i][j]
+                        : brainB.weightsHiddenOutput[i][j];
+            }
+        }
+
+        // Crossover biases for output layer
+        for (let i = 0; i < brainA.biasesOutput.length; i++) {
+            childBrain.biasesOutput[i] =
+                Math.random() < 0.5
+                    ? brainA.biasesOutput[i]
+                    : brainB.biasesOutput[i];
+        }
 
         return child;
     }

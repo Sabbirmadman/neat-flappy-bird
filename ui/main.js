@@ -10,7 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     console.log("Canvas found, setting dimensions");
-    canvas.width = 600;
+    canvas.width = 1200;
     canvas.height = 800;
 
     console.log("Creating game instance");

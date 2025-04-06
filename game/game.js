@@ -5,7 +5,7 @@ import Neat from "../neat/neat.js";
 
 class Game {
     constructor(canvas) {
-        this.populationSize = 30;
+        this.populationSize = 500;
         this.canvas = canvas;
         this.ctx = canvas.getContext("2d");
         this.ground = new Ground(canvas);

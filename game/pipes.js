@@ -5,11 +5,11 @@ class Pipe {
         this.ground = ground;
 
         this.width = 60;
-        this.gap = 180;
-        this.speed = 1.5;
+        this.gap = 200;
+        this.speed = 2;
         this.passed = false;
 
-        const minGapPosition = 120;
+        const minGapPosition = 140;
         const maxGapPosition =
             canvas.height - ground.height - this.gap - minGapPosition;
         this.gapPosition =

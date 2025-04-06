@@ -5,7 +5,7 @@ import Neat from "../neat/neat.js";
 
 class Game {
     constructor(canvas) {
-        this.populationSize = 200;
+        this.populationSize = 30;
         this.canvas = canvas;
         this.ctx = canvas.getContext("2d");
         this.ground = new Ground(canvas);
@@ -27,6 +27,9 @@ class Game {
         this.frameCount = 0;
         this.lastFpsUpdate = 0;
         this.fps = 0;
+        // Keep rendering options but remove game speed
+        this.renderAllBirds = true;
+        this.maxRenderBirds = 20;
         this.bindEvents();
     }
 
@@ -68,11 +71,46 @@ class Game {
                         this.start();
                     }
 
+                    // Clean up old NEAT instance if it exists
+                    if (this.neat) {
+                        this.neat.dispose();
+                    }
+
+                    // Create a new NEAT instance with fresh parameters
+                    this.neat = new Neat(
+                        this.canvas,
+                        this.ground,
+                        this.pipeManager,
+                        this.populationSize
+                    );
+
                     // Then restart to initialize the AI properly
                     this.restart();
 
                     // Finally start AI training
                     this.neat.startTraining();
+                }
+            }
+
+            // Keep other controls but remove speed controls
+            if (!this.isHumanPlaying) {
+                // Toggle rendering all birds vs. only showing top birds
+                if (e.code === "KeyV") {
+                    this.renderAllBirds = !this.renderAllBirds;
+                    console.log(
+                        `Rendering ${
+                            this.renderAllBirds ? "all" : "limited"
+                        } birds`
+                    );
+                }
+
+                // Population size controls
+                if (e.code === "BracketRight") {
+                    // ] key
+                    this.increasePopulationSize();
+                } else if (e.code === "BracketLeft") {
+                    // [ key
+                    this.decreasePopulationSize();
                 }
             }
 
@@ -98,6 +136,46 @@ class Game {
         });
     }
 
+    // Keep population size adjustment methods
+    increasePopulationSize() {
+        const newSize = this.populationSize + 10;
+        if (newSize > 200) {
+            console.warn(
+                "Population sizes over 200 may cause significant performance issues"
+            );
+        }
+        this.populationSize = newSize;
+
+        // Create new population with updated size
+        this.neat.dispose();
+        this.neat = new Neat(
+            this.canvas,
+            this.ground,
+            this.pipeManager,
+            this.populationSize
+        );
+        this.restart();
+        this.neat.startTraining();
+        console.log(`Population size increased to ${this.populationSize}`);
+    }
+
+    decreasePopulationSize() {
+        if (this.populationSize <= 10) return; // Minimum size
+        this.populationSize = Math.max(10, this.populationSize - 10);
+
+        // Create new population with updated size
+        this.neat.dispose();
+        this.neat = new Neat(
+            this.canvas,
+            this.ground,
+            this.pipeManager,
+            this.populationSize
+        );
+        this.restart();
+        this.neat.startTraining();
+        console.log(`Population size decreased to ${this.populationSize}`);
+    }
+
     restart() {
         // Don't set isRunning to false in AI mode to keep the game loop going
         if (this.isHumanPlaying) {
@@ -109,6 +187,11 @@ class Game {
         if (this.isHumanPlaying) {
             this.bird = new Bird(this.canvas);
         } else {
+            // Clean up old NEAT instance properly
+            if (this.neat) {
+                this.neat.dispose();
+            }
+
             this.neat = new Neat(
                 this.canvas,
                 this.ground,
@@ -134,6 +217,7 @@ class Game {
     }
 
     update(currentTime) {
+        // Simplified update without game speed
         if (this.isHumanPlaying) {
             if (this.gameOver) return;
 
@@ -220,7 +304,16 @@ class Game {
                 );
             }
         } else {
-            this.neat.draw(this.ctx);
+            // Keep rendering optimization
+            if (
+                this.renderAllBirds ||
+                this.populationSize <= this.maxRenderBirds
+            ) {
+                this.neat.draw(this.ctx);
+            } else {
+                // Only draw best birds when population is large
+                this.neat.drawBestBirds(this.ctx, this.maxRenderBirds);
+            }
         }
 
         this.ground.draw();
@@ -230,8 +323,9 @@ class Game {
         this.ctx.fillText(`FPS: ${this.fps}`, this.canvas.width - 80, 30);
 
         if (!this.isHumanPlaying) {
+            // Update controls display - remove speed controls
             this.ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
-            this.ctx.fillRect(this.canvas.width - 160, 50, 190, 140);
+            this.ctx.fillRect(this.canvas.width - 160, 50, 190, 190); // Smaller height
             this.ctx.fillStyle = "white";
             this.ctx.font = "12px Arial";
             this.ctx.fillText("Controls:", this.canvas.width - 140, 75);
@@ -243,9 +337,19 @@ class Game {
             this.ctx.fillText("H: Human mode", this.canvas.width - 140, 125);
             this.ctx.fillText("A: AI mode", this.canvas.width - 140, 150);
             this.ctx.fillText(
-                `Mode: AI ${this.isAITraining ? "Running" : "Paused"}`,
+                "V: Toggle bird rendering",
                 this.canvas.width - 140,
                 175
+            );
+            this.ctx.fillText(
+                "[/]: Adjust population",
+                this.canvas.width - 140,
+                200
+            );
+            this.ctx.fillText(
+                `Mode: AI ${this.isAITraining ? "Running" : "Paused"}`,
+                this.canvas.width - 140,
+                225
             );
         }
     }

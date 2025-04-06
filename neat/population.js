@@ -7,12 +7,19 @@ class Population {
         this.generation = 1;
         this.bestScore = 0;
         this.bestFitness = 0;
-        // Lower initial mutation rate and slower decay
-        this.mutationRate = Math.max(0.1, 0.2 - this.generation * 0.001);
+        // Adjust mutation rate for larger populations - less mutation with more genomes
+        this.baseMutationRate = 0.2;
+        this.mutationRate = Math.max(
+            0.05,
+            this.baseMutationRate - this.size * 0.0003
+        );
         this.initialize();
     }
 
     initialize() {
+        // Dispose old genomes to prevent memory leaks
+        this.disposeGenomes();
+
         this.genomes = [];
         for (let i = 0; i < this.size; i++) {
             this.genomes.push(new Genome());
@@ -20,6 +27,16 @@ class Population {
         this.generation = 1;
         this.bestScore = 0;
         this.bestFitness = 0;
+    }
+
+    // Dispose all genomes to prevent memory leaks
+    disposeGenomes() {
+        if (this.genomes) {
+            for (const genome of this.genomes) {
+                if (genome) genome.dispose();
+            }
+            this.genomes = [];
+        }
     }
 
     evolve() {
@@ -50,10 +67,17 @@ class Population {
             eliteCopy.isElite = true;
             newGenomes.push(eliteCopy);
 
-            // Also keep 2-3 more top genomes with slight mutation
+            // Scale elite count based on population size (1% of population, min 2, max 10)
+            const eliteCount = Math.min(
+                10,
+                Math.max(2, Math.floor(this.size * 0.01))
+            );
+
+            // Also keep more top genomes with slight mutation
             const topGenomes = [...this.genomes]
                 .sort((a, b) => b.fitness - a.fitness)
-                .slice(0, 3);
+                .slice(0, eliteCount);
+
             for (
                 let i = 1;
                 i < topGenomes.length && newGenomes.length < this.size;
@@ -69,17 +93,25 @@ class Population {
             console.warn("No best genome identified for elitism.");
         }
 
+        // Adjust selection pressure based on population size
+        const tournamentSize = Math.max(
+            3,
+            Math.min(20, Math.floor(this.size * 0.1))
+        );
+
+        // Create new genomes until we reach the desired population size
         while (newGenomes.length < this.size) {
+            // Occasionally introduce completely new genomes to maintain diversity
             if (Math.random() < 0.02 && newGenomes.length < this.size) {
                 newGenomes.push(new Genome());
                 continue;
             }
 
-            const parentA = this.selectGenome(totalFitness);
+            const parentA = this.selectGenome(totalFitness, tournamentSize);
             let child;
 
             if (Math.random() < 0.7 && newGenomes.length < this.size) {
-                const parentB = this.selectGenome(totalFitness);
+                const parentB = this.selectGenome(totalFitness, tournamentSize);
                 if (parentA && parentB) {
                     child = this.crossover(parentA, parentB);
                     child.mutate(this.mutationRate);
@@ -102,54 +134,63 @@ class Population {
             }
         }
 
+        // Dispose old genomes before replacing them
+        this.disposeGenomes();
         this.genomes = newGenomes;
         this.generation++;
-        // Slower decay of mutation rate
-        this.mutationRate = Math.max(0.05, 0.2 - this.generation * 0.001);
+
+        // Adjust mutation rate based on generation and population size
+        // Larger populations should use lower mutation rates
+        const sizeFactor = Math.max(0.5, Math.min(1.0, 100 / this.size));
+        this.mutationRate = Math.max(
+            0.05,
+            this.baseMutationRate * sizeFactor - this.generation * 0.0005
+        );
     }
 
     crossover(parentA, parentB) {
         const child = new Genome();
-        this.crossoverWeights(
-            parentA.brain.weightsIH,
-            parentB.brain.weightsIH,
-            child.brain.weightsIH
-        );
-        this.crossoverWeights(
-            parentA.brain.weightsHO,
-            parentB.brain.weightsHO,
-            child.brain.weightsHO
-        );
-        this.crossoverArray(
-            parentA.brain.biasH,
-            parentB.brain.biasH,
-            child.brain.biasH
-        );
-        this.crossoverArray(
-            parentA.brain.biasO,
-            parentB.brain.biasO,
-            child.brain.biasO
-        );
+
+        // Use tf.tidy to clean up tensors
+        tf.tidy(() => {
+            try {
+                // Get weights from both parents' models
+                const weightsA = parentA.brain.model.getWeights();
+                const weightsB = parentB.brain.model.getWeights();
+
+                // Create new weights by crossover
+                const crossedWeights = weightsA.map((tensorA, i) => {
+                    const tensorB = weightsB[i];
+                    return tf.tidy(() => {
+                        const shapeA = tensorA.shape;
+                        const valuesA = tensorA.dataSync().slice();
+                        const valuesB = tensorB.dataSync().slice();
+
+                        // Create new array with crossed-over values
+                        const newValues = new Float32Array(valuesA.length);
+                        for (let j = 0; j < valuesA.length; j++) {
+                            newValues[j] =
+                                Math.random() < 0.5 ? valuesA[j] : valuesB[j];
+                        }
+
+                        return tf.tensor(newValues, shapeA);
+                    });
+                });
+
+                // Set the new weights to the child's model
+                child.brain.model.setWeights(crossedWeights);
+            } catch (error) {
+                console.error("Error during crossover:", error);
+                // Create a fresh genome if crossover fails
+                child.brain = new NeuralNetwork(4, 8, 1);
+            }
+        });
+
         return child;
     }
 
-    crossoverWeights(weightsA, weightsB, resultWeights) {
-        for (let i = 0; i < weightsA.length; i++) {
-            for (let j = 0; j < weightsA[i].length; j++) {
-                resultWeights[i][j] =
-                    Math.random() < 0.5 ? weightsA[i][j] : weightsB[i][j];
-            }
-        }
-    }
-
-    crossoverArray(arrayA, arrayB, resultArray) {
-        for (let i = 0; i < arrayA.length; i++) {
-            resultArray[i] = Math.random() < 0.5 ? arrayA[i] : arrayB[i];
-        }
-    }
-
-    // Improved selection method using tournament selection
-    selectGenome(totalFitness) {
+    // Update to pass tournament size as parameter
+    selectGenome(totalFitness, tournamentSize = 3) {
         if (totalFitness <= 0 || !this.genomes || this.genomes.length === 0) {
             if (!this.genomes || this.genomes.length === 0) return null;
             return this.genomes[
@@ -158,13 +199,13 @@ class Population {
         }
 
         // Tournament selection - select best from a random subset
-        const tournamentSize = Math.max(
-            3,
-            Math.floor(this.genomes.length * 0.1)
+        const actualTournamentSize = Math.min(
+            tournamentSize,
+            this.genomes.length
         );
         let bestInTournament = null;
 
-        for (let i = 0; i < tournamentSize; i++) {
+        for (let i = 0; i < actualTournamentSize; i++) {
             const randomIndex = Math.floor(Math.random() * this.genomes.length);
             const candidate = this.genomes[randomIndex];
 
@@ -207,6 +248,11 @@ class Population {
             bestFitness: this.bestFitness,
             populationSize: this.size,
         };
+    }
+
+    // Clean up resources when population is no longer needed
+    dispose() {
+        this.disposeGenomes();
     }
 }
 

@@ -19,6 +19,35 @@ class Neat {
         // Store the best bird for visualization
         this.bestBird = null;
         this.showNetworkVisualization = true;
+
+        // Tensor memory management
+        this.setupMemoryManagement();
+    }
+
+    // Set up memory management for TensorFlow
+    setupMemoryManagement() {
+        // Monitor memory usage periodically
+        this.memoryCheckInterval = setInterval(() => {
+            if (window.tf && this.isTraining) {
+                const memoryInfo = tf.memory();
+                console.log(
+                    "TF Memory:",
+                    "Tensors:",
+                    memoryInfo.numTensors,
+                    "Bytes:",
+                    Math.round(memoryInfo.numBytes / 1024),
+                    "KB"
+                );
+
+                // Force garbage collection if too many tensors
+                if (memoryInfo.numTensors > 5000) {
+                    console.warn(
+                        "Too many tensors, forcing garbage collection"
+                    );
+                    tf.tidy(() => {}); // Empty tidy forces disposal of unused tensors
+                }
+            }
+        }, 10000); // Check every 10 seconds
     }
 
     // Toggle network visualization
@@ -28,6 +57,11 @@ class Neat {
 
     // Add a method to set the population size
     setPopulationSize(size) {
+        // Clean up old population first
+        if (this.population) {
+            this.population.dispose();
+        }
+
         // Validate the size
         if (size < 2) size = 2; // Minimum population size
         if (size > 500) size = 500; // Maximum population size to prevent performance issues
@@ -45,6 +79,9 @@ class Neat {
     }
 
     createBirds() {
+        // Clean up old birds
+        this.cleanupBirds();
+
         this.birds = [];
         const genomes = this.population.getGenomes();
 
@@ -70,6 +107,14 @@ class Neat {
             }
 
             this.birds.push(bird);
+        }
+    }
+
+    // Clean up birds to prevent memory leaks
+    cleanupBirds() {
+        if (this.birds) {
+            // No need to dispose genomes here as they're handled by the population
+            this.birds = [];
         }
     }
 
@@ -203,19 +248,51 @@ class Neat {
     }
 
     evolve() {
-        // Calculate final fitness for all birds before evolution
-        for (const bird of this.birds) {
-            bird.brain.calculateFitness();
+        console.log("Evolving to next generation...");
+
+        // Force garbage collection before evolution
+        if (window.tf) {
+            tf.engine().startScope(); // Start a new scope to track tensors
         }
 
-        // Evolve the population
-        this.population.evolve();
+        try {
+            // Calculate final fitness for all birds before evolution
+            for (const bird of this.birds) {
+                bird.brain.calculateFitness();
+            }
 
-        // Reset pipes
-        this.pipeManager.reset();
+            // Evolve the population
+            this.population.evolve();
 
-        // Create new birds with evolved brains
-        this.createBirds();
+            // Reset pipes
+            this.pipeManager.reset();
+
+            // Create new birds with evolved brains
+            this.createBirds();
+
+            console.log(
+                "Evolution complete - Generation:",
+                this.population.generation
+            );
+        } catch (error) {
+            console.error("Error during evolution:", error);
+            // Try to recover by creating a fresh population
+            if (this.population) {
+                this.population.dispose();
+            }
+            this.population = new Population(this.birds.length || 20);
+            this.createBirds();
+        } finally {
+            // End the scope to clean up unused tensors
+            if (window.tf) {
+                tf.engine().endScope();
+                // Force garbage collection
+                tf.tidy(() => {});
+            }
+        }
+
+        // Ensure isTraining remains true to continue evolution
+        this.isTraining = true;
     }
 
     draw(ctx) {
@@ -235,7 +312,7 @@ class Neat {
         const stats = this.population.getStats();
 
         ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
-        ctx.fillRect(10, 10, 240, 80);
+        ctx.fillRect(10, 10, 240, 100); // Extended height to fit population size
 
         ctx.fillStyle = "white";
         ctx.font = "12px Arial";
@@ -248,8 +325,69 @@ class Neat {
             20,
             70
         );
+        ctx.fillText(`Population Size: ${stats.populationSize}`, 20, 90);
 
         // Draw network visualization if enabled and there's a best bird
+        if (
+            this.showNetworkVisualization &&
+            this.bestBird &&
+            !this.bestBird.isDead
+        ) {
+            this.drawNetworkVisualization(ctx);
+        }
+    }
+
+    // Add a new method to draw only the best birds
+    drawBestBirds(ctx, maxToRender = 20) {
+        // Get alive birds sorted by fitness
+        const aliveBirds = this.birds
+            .filter((b) => !b.isDead)
+            .sort((a, b) => b.brain.fitness - a.brain.fitness)
+            .slice(0, maxToRender);
+
+        // Draw the best birds
+        for (const bird of aliveBirds) {
+            if (
+                bird.position.x > -bird.radius &&
+                bird.position.x < this.canvas.width + bird.radius &&
+                bird.position.y < this.canvas.height + bird.radius
+            ) {
+                bird.draw(ctx);
+            }
+        }
+
+        // Always draw the best bird in red to easily track it
+        if (this.bestBird && !this.bestBird.isDead) {
+            const originalColor = this.bestBird.color;
+            this.bestBird.color = "red";
+            this.bestBird.draw(ctx);
+            this.bestBird.color = originalColor;
+        }
+
+        // Draw stats with additional info
+        const stats = this.population.getStats();
+        const totalAlive = this.birds.filter((b) => !b.isDead).length;
+
+        ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+        ctx.fillRect(10, 10, 240, 130);
+
+        ctx.fillStyle = "white";
+        ctx.font = "12px Arial";
+        ctx.fillText(`Generation: ${stats.generation}`, 20, 30);
+        ctx.fillText(`Best Score: ${stats.bestScore}`, 20, 50);
+        ctx.fillText(
+            `Birds Alive: ${totalAlive}/${stats.populationSize}`,
+            20,
+            70
+        );
+        ctx.fillText(`Population Size: ${stats.populationSize}`, 20, 90);
+        ctx.fillText(
+            `Rendering: Top ${Math.min(maxToRender, totalAlive)} birds`,
+            20,
+            110
+        );
+
+        // Draw network visualization for the best bird
         if (
             this.showNetworkVisualization &&
             this.bestBird &&
@@ -358,6 +496,24 @@ class Neat {
     // Get the best bird's genome for display or saving
     getBestGenome() {
         return this.population.getBestGenome();
+    }
+
+    // Method to clean up resources when the NEAT instance is no longer needed
+    dispose() {
+        if (this.memoryCheckInterval) {
+            clearInterval(this.memoryCheckInterval);
+        }
+
+        this.cleanupBirds();
+
+        if (this.population) {
+            this.population.dispose();
+        }
+
+        // Run garbage collection
+        if (window.tf) {
+            tf.tidy(() => {});
+        }
     }
 }
 

@@ -13,7 +13,15 @@ class Genome {
 
     copy() {
         let genome = new Genome();
-        genome.brain = this.brain.copy();
+        try {
+            // Dispose old brain to prevent memory leak
+            genome.brain.dispose();
+            genome.brain = this.brain.copy();
+        } catch (error) {
+            console.error("Error copying genome:", error);
+            // Create a fresh brain if copying fails
+            genome.brain = new NeuralNetwork(4, 8, 1);
+        }
         genome.isElite = this.isElite;
         genome.score = 0;
         genome.lifespan = 0;
@@ -23,6 +31,7 @@ class Genome {
 
     think(inputs) {
         this.lastInputs = [...inputs];
+        // Run inference with TensorFlow
         const output = this.brain.feedForward(inputs);
         return output[0] > 0.5;
     }
@@ -67,6 +76,13 @@ class Genome {
         if (this.fitness < 0.1) this.fitness = 0.1;
 
         return this.fitness;
+    }
+
+    // Clean up resources when genome is no longer needed
+    dispose() {
+        if (this.brain) {
+            this.brain.dispose();
+        }
     }
 }
 

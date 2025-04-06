@@ -3,37 +3,49 @@ class NeuralNetwork {
         this.inputNodes = inputNodes;
         this.hiddenNodes = hiddenNodes;
         this.outputNodes = outputNodes;
-        this.weightsIH = this.initializeWeights(
-            this.inputNodes,
-            this.hiddenNodes
-        );
-        this.weightsHO = this.initializeWeights(
-            this.hiddenNodes,
-            this.outputNodes
-        );
-        this.biasH = Array(this.hiddenNodes)
-            .fill()
-            .map(() => Math.random() * 2 - 1);
-        this.biasO = Array(this.outputNodes)
-            .fill()
-            .map(() => Math.random() * 2 - 1);
+
+        // Create TensorFlow model
+        this.createModel();
     }
 
-    initializeWeights(rows, cols) {
-        let weights = [];
-        for (let i = 0; i < rows; i++) {
-            weights.push([]);
-            for (let j = 0; j < cols; j++) {
-                weights[i].push(Math.random() * 2 - 1);
-            }
+    createModel() {
+        // Dispose previous model to prevent memory leak
+        if (this.model) {
+            this.model.dispose();
         }
-        return weights;
+
+        // Create sequential model with TensorFlow.js
+        this.model = tf.sequential();
+
+        // Add hidden layer
+        this.model.add(
+            tf.layers.dense({
+                units: this.hiddenNodes,
+                inputShape: [this.inputNodes],
+                activation: "sigmoid",
+                kernelInitializer: "randomNormal",
+                biasInitializer: "randomNormal",
+            })
+        );
+
+        // Add output layer
+        this.model.add(
+            tf.layers.dense({
+                units: this.outputNodes,
+                activation: "sigmoid",
+                kernelInitializer: "randomNormal",
+                biasInitializer: "randomNormal",
+            })
+        );
+
+        // Compile the model
+        this.model.compile({
+            optimizer: tf.train.adam(0.01),
+            loss: "meanSquaredError",
+        });
     }
 
-    activate(x) {
-        return 1 / (1 + Math.exp(-x));
-    }
-
+    // Feed forward using TensorFlow
     feedForward(inputs) {
         if (inputs.length !== this.inputNodes) {
             throw new Error(
@@ -41,70 +53,73 @@ class NeuralNetwork {
             );
         }
 
-        let hiddenOutputs = Array(this.hiddenNodes).fill(0);
+        // Using tidy to automatically clean up tensors
+        return tf.tidy(() => {
+            // Convert inputs to a tensor
+            const xs = tf.tensor2d([inputs]);
 
-        for (let i = 0; i < this.hiddenNodes; i++) {
-            let sum = this.biasH[i];
-            for (let j = 0; j < this.inputNodes; j++) {
-                sum += inputs[j] * this.weightsIH[j][i];
-            }
-            hiddenOutputs[i] = this.activate(sum);
-        }
+            // Get prediction
+            const prediction = this.model.predict(xs);
 
-        let finalOutputs = Array(this.outputNodes).fill(0);
-
-        for (let i = 0; i < this.outputNodes; i++) {
-            let sum = this.biasO[i];
-            for (let j = 0; j < this.hiddenNodes; j++) {
-                sum += hiddenOutputs[j] * this.weightsHO[j][i];
-            }
-            finalOutputs[i] = this.activate(sum);
-        }
-
-        return finalOutputs;
+            // Convert to regular array and return
+            return prediction.dataSync();
+        });
     }
 
+    // Create a copy of the neural network
     copy() {
-        let copy = new NeuralNetwork(
+        const copy = new NeuralNetwork(
             this.inputNodes,
             this.hiddenNodes,
             this.outputNodes
         );
-        copy.weightsIH = JSON.parse(JSON.stringify(this.weightsIH));
-        copy.weightsHO = JSON.parse(JSON.stringify(this.weightsHO));
-        copy.biasH = [...this.biasH];
-        copy.biasO = [...this.biasO];
+
+        // Using tidy to automatically clean up tensors
+        tf.tidy(() => {
+            // Copy weights from this model to new model
+            const weights = this.model.getWeights();
+            const weightCopies = weights.map((w) => w.clone());
+            copy.model.setWeights(weightCopies);
+        });
+
         return copy;
     }
 
+    // Mutate the network's weights
     mutate(rate) {
-        const mutateValue = (val) => {
-            if (Math.random() < rate) {
-                if (Math.random() < 0.07) {
-                    return Math.random() * 2 - 1;
-                } else if (Math.random() < 0.13) {
-                    return val + (Math.random() * 0.8 - 0.4);
-                } else {
-                    return val + (Math.random() * 0.2 - 0.1);
-                }
-            }
-            return val;
-        };
+        tf.tidy(() => {
+            const weights = this.model.getWeights();
+            const mutatedWeights = weights.map((tensor) => {
+                return tf.tidy(() => {
+                    const shape = tensor.shape;
+                    const values = tensor.dataSync().slice();
 
-        for (let i = 0; i < this.inputNodes; i++) {
-            for (let j = 0; j < this.hiddenNodes; j++) {
-                this.weightsIH[i][j] = mutateValue(this.weightsIH[i][j]);
-            }
+                    for (let i = 0; i < values.length; i++) {
+                        if (Math.random() < rate) {
+                            if (Math.random() < 0.07) {
+                                values[i] = Math.random() * 2 - 1;
+                            } else if (Math.random() < 0.13) {
+                                values[i] += Math.random() * 0.8 - 0.4;
+                            } else {
+                                values[i] += Math.random() * 0.2 - 0.1;
+                            }
+                        }
+                    }
+
+                    return tf.tensor(values, shape);
+                });
+            });
+
+            this.model.setWeights(mutatedWeights);
+        });
+    }
+
+    // Clean up resources to prevent memory leaks
+    dispose() {
+        if (this.model) {
+            this.model.dispose();
+            this.model = null;
         }
-
-        for (let i = 0; i < this.hiddenNodes; i++) {
-            for (let j = 0; j < this.outputNodes; j++) {
-                this.weightsHO[i][j] = mutateValue(this.weightsHO[i][j]);
-            }
-        }
-
-        this.biasH = this.biasH.map(mutateValue);
-        this.biasO = this.biasO.map(mutateValue);
     }
 }
 

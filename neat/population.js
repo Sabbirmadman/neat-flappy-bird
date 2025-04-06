@@ -1,5 +1,3 @@
-import Genome from "./genome.js";
-
 class Population {
     constructor(size = 100) {
         this.size = size;
@@ -22,7 +20,8 @@ class Population {
 
         this.genomes = [];
         for (let i = 0; i < this.size; i++) {
-            this.genomes.push(new Genome());
+            // Use global Genome
+            this.genomes.push(new window.Genome());
         }
         this.generation = 1;
         this.bestScore = 0;
@@ -103,7 +102,7 @@ class Population {
         while (newGenomes.length < this.size) {
             // Occasionally introduce completely new genomes to maintain diversity
             if (Math.random() < 0.02 && newGenomes.length < this.size) {
-                newGenomes.push(new Genome());
+                newGenomes.push(new window.Genome());
                 continue;
             }
 
@@ -130,7 +129,7 @@ class Population {
                     "Skipping single parent mutation due to missing parent."
                 );
                 if (newGenomes.length < this.size)
-                    newGenomes.push(new Genome());
+                    newGenomes.push(new window.Genome());
             }
         }
 
@@ -149,7 +148,7 @@ class Population {
     }
 
     crossover(parentA, parentB) {
-        const child = new Genome();
+        const child = new window.Genome();
 
         // Get neural network from parents
         const brainA = parentA.brain;
@@ -265,4 +264,4 @@ class Population {
     }
 }
 
-export default Population;
+window.Population = Population;

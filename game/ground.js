@@ -29,4 +29,5 @@ class Ground {
     }
 }
 
-export default Ground;
+// Remove export and make globally available
+window.Ground = Ground;

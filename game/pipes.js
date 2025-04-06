@@ -9,7 +9,7 @@ class Pipe {
         this.speed = 2;
         this.passed = false;
 
-        const minGapPosition = 140;
+        const minGapPosition = 120;
         const maxGapPosition =
             canvas.height - ground.height - this.gap - minGapPosition;
         this.gapPosition =
@@ -173,5 +173,6 @@ class PipeManager {
     }
 }
 
-export default PipeManager;
-export { Pipe };
+// Remove export and make globally available
+window.Pipe = Pipe;
+window.PipeManager = PipeManager;

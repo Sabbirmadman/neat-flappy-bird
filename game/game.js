@@ -1,19 +1,14 @@
-import Bird from "./bird.js";
-import Ground from "./ground.js";
-import PipeManager, { Pipe } from "./pipes.js";
-import Neat from "../neat/neat.js";
-
 class Game {
     constructor(canvas, backgroundImage) {
         this.populationSize = 500;
         this.canvas = canvas;
         this.ctx = canvas.getContext("2d");
-        this.ground = new Ground(canvas);
-        this.pipeManager = new PipeManager(canvas, this.ground);
-        this.bird = new Bird(canvas);
+        this.ground = new window.Ground(canvas);
+        this.pipeManager = new window.PipeManager(canvas, this.ground);
+        this.bird = new window.Bird(canvas);
         this.backgroundImage = backgroundImage;
         this.isHumanPlaying = true;
-        this.neat = new Neat(
+        this.neat = new window.Neat(
             canvas,
             this.ground,
             this.pipeManager,
@@ -78,7 +73,7 @@ class Game {
                     }
 
                     // Create a new NEAT instance with fresh parameters
-                    this.neat = new Neat(
+                    this.neat = new window.Neat(
                         this.canvas,
                         this.ground,
                         this.pipeManager,
@@ -149,7 +144,7 @@ class Game {
 
         // Create new population with updated size
         this.neat.dispose();
-        this.neat = new Neat(
+        this.neat = new window.Neat(
             this.canvas,
             this.ground,
             this.pipeManager,
@@ -166,7 +161,7 @@ class Game {
 
         // Create new population with updated size
         this.neat.dispose();
-        this.neat = new Neat(
+        this.neat = new window.Neat(
             this.canvas,
             this.ground,
             this.pipeManager,
@@ -186,14 +181,14 @@ class Game {
         this.pipeManager.reset(); // Always reset pipes regardless of mode
 
         if (this.isHumanPlaying) {
-            this.bird = new Bird(this.canvas);
+            this.bird = new window.Bird(this.canvas);
         } else {
             // Clean up old NEAT instance properly
             if (this.neat) {
                 this.neat.dispose();
             }
 
-            this.neat = new Neat(
+            this.neat = new window.Neat(
                 this.canvas,
                 this.ground,
                 this.pipeManager,
@@ -201,7 +196,9 @@ class Game {
             );
 
             // Create initial pipes to give the AI birds something to respond to
-            this.pipeManager.pipes.push(new Pipe(this.canvas, this.ground));
+            this.pipeManager.pipes.push(
+                new window.Pipe(this.canvas, this.ground)
+            );
         }
 
         this.gameOver = false;
@@ -244,7 +241,7 @@ class Game {
                 // Force at least one pipe if none exist
                 if (this.pipeManager.pipes.length === 0) {
                     this.pipeManager.pipes.push(
-                        new Pipe(this.canvas, this.ground)
+                        new window.Pipe(this.canvas, this.ground)
                     );
                 }
             }
@@ -378,4 +375,4 @@ class Game {
     }
 }
 
-export default Game;
+window.Game = Game;

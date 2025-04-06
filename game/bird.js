@@ -95,4 +95,5 @@ class Bird {
     }
 }
 
-export default Bird;
+// Remove export and make globally available
+window.Bird = Bird;

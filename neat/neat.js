@@ -1,14 +1,11 @@
-import Population from "./population.js";
-import Bird from "../game/bird.js";
-
 class Neat {
     constructor(canvas, ground, pipeManager, populationSize = 100) {
         this.canvas = canvas;
         this.ground = ground;
         this.pipeManager = pipeManager;
 
-        // Create population
-        this.population = new Population(populationSize);
+        // Create population using global Population
+        this.population = new window.Population(populationSize);
 
         // Create birds with brains
         this.birds = [];
@@ -43,7 +40,7 @@ class Neat {
         if (size > 500) size = 500; // Maximum population size to prevent performance issues
 
         // Create a new population with the given size
-        this.population = new Population(size);
+        this.population = new window.Population(size);
 
         // Recreate birds with the new population size
         this.createBirds();
@@ -68,7 +65,8 @@ class Neat {
         }
 
         for (const genome of genomes) {
-            const bird = new Bird(this.canvas);
+            // Use global Bird constructor
+            const bird = new window.Bird(this.canvas);
             // Reset bird position to ensure it starts in a good position
             bird.position.y = this.canvas.height / 2;
             bird.velocity = 0;
@@ -251,7 +249,7 @@ class Neat {
             if (this.population) {
                 this.population.dispose();
             }
-            this.population = new Population(this.birds.length || 20);
+            this.population = new window.Population(this.birds.length || 20);
             this.createBirds();
         }
 
@@ -476,4 +474,5 @@ class Neat {
     }
 }
 
-export default Neat;
+// Remove export and make globally available
+window.Neat = Neat;

@@ -147,4 +147,5 @@ class NeuralNetwork {
     }
 }
 
-export default NeuralNetwork;
+// Remove export and make globally available
+window.NeuralNetwork = NeuralNetwork;

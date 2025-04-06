@@ -1,5 +1,3 @@
-import Game from "./../game/game.js";
-
 document.addEventListener("DOMContentLoaded", () => {
     console.log("DOM loaded");
     const canvas = document.getElementById("game-canvas");
@@ -20,7 +18,8 @@ document.addEventListener("DOMContentLoaded", () => {
     backgroundImage.onload = () => {
         console.log("Background image loaded");
         console.log("Creating game instance");
-        const game = new Game(canvas, backgroundImage);
+        // Use Game from the global scope
+        const game = new window.Game(canvas, backgroundImage);
         console.log("Game instance created", game);
 
         // Show instructions
@@ -45,7 +44,7 @@ document.addEventListener("DOMContentLoaded", () => {
     backgroundImage.onerror = () => {
         console.error("Failed to load background image");
         // Initialize game without background image as fallback
-        const game = new Game(canvas);
+        const game = new window.Game(canvas);
 
         // Show instructions with fallback background
         const ctx = canvas.getContext("2d");

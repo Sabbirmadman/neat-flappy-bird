@@ -1,8 +1,11 @@
-import NeuralNetwork from "./neural-network.js";
-
 class Genome {
     constructor(inputNodes = 4, hiddenNodes = 8, outputNodes = 1) {
-        this.brain = new NeuralNetwork(inputNodes, hiddenNodes, outputNodes);
+        // Reference NeuralNetwork from the global scope
+        this.brain = new window.NeuralNetwork(
+            inputNodes,
+            hiddenNodes,
+            outputNodes
+        );
         this.fitness = 0;
         this.score = 0;
         this.lifespan = 0;
@@ -115,4 +118,5 @@ class Genome {
     }
 }
 
-export default Genome;
+// Remove export and make globally available
+window.Genome = Genome;

@@ -4,13 +4,14 @@ import PipeManager, { Pipe } from "./pipes.js";
 import Neat from "../neat/neat.js";
 
 class Game {
-    constructor(canvas) {
+    constructor(canvas, backgroundImage) {
         this.populationSize = 500;
         this.canvas = canvas;
         this.ctx = canvas.getContext("2d");
         this.ground = new Ground(canvas);
         this.pipeManager = new PipeManager(canvas, this.ground);
         this.bird = new Bird(canvas);
+        this.backgroundImage = backgroundImage;
         this.isHumanPlaying = true;
         this.neat = new Neat(
             canvas,
@@ -258,8 +259,21 @@ class Game {
     }
 
     draw() {
-        this.ctx.fillStyle = "skyblue";
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        // Draw background image instead of solid color
+        if (this.backgroundImage) {
+            // Draw the image to cover the entire canvas
+            this.ctx.drawImage(
+                this.backgroundImage,
+                0,
+                0,
+                this.canvas.width,
+                this.canvas.height
+            );
+        } else {
+            // Fallback to sky blue if image not loaded
+            this.ctx.fillStyle = "skyblue";
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        }
 
         this.pipeManager.draw();
 

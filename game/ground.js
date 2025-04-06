@@ -2,13 +2,13 @@ class Ground {
     constructor(canvas) {
         this.canvas = canvas;
         this.ctx = canvas.getContext("2d");
-        this.height = 100;
+        this.height = 140;
         this.position = {
             y: canvas.height - this.height,
         };
         this.speed = 2;
         this.width = canvas.width;
-        this.color = "#8B4513";
+        this.color = "rgba(139, 69, 19, 0)"; // Changed to rgba with 0.6 alpha
     }
 
     update() {}
@@ -17,7 +17,7 @@ class Ground {
         this.ctx.fillStyle = this.color;
         this.ctx.fillRect(0, this.position.y, this.width, this.height);
 
-        this.ctx.fillStyle = "#654321";
+        this.ctx.fillStyle = "rgba(101, 67, 33, 0)"; // Changed to rgba with 0.8 alpha
         this.ctx.fillRect(0, this.position.y, this.width, 5);
     }
 

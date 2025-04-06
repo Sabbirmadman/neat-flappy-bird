@@ -5,7 +5,7 @@ class Pipe {
         this.ground = ground;
 
         this.width = 60;
-        this.gap = 200;
+        this.gap = 180;
         this.speed = 2;
         this.passed = false;
 
@@ -40,8 +40,9 @@ class Pipe {
         );
 
         const bottomPipeTop = this.gapPosition + this.gap;
-        const bottomPipeHeight =
-            this.canvas.height - bottomPipeTop - this.ground.height;
+        // Calculate height to reach all the way to the ground
+        const bottomPipeHeight = this.canvas.height - bottomPipeTop;
+
         this.ctx.fillStyle = this.color;
         this.ctx.fillRect(
             this.position.x,

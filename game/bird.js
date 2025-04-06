@@ -2,7 +2,7 @@ class Bird {
     constructor(canvas) {
         this.canvas = canvas;
         this.ctx = canvas.getContext("2d");
-        this.radius = 15;
+        this.radius = 20; // Increased from 15 to 25
         this.position = {
             x: canvas.width / 5,
             y: canvas.height / 2,

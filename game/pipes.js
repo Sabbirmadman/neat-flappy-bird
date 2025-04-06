@@ -5,12 +5,10 @@ class Pipe {
         this.ground = ground;
 
         this.width = 60;
-        // random gaps between pipes and ground
         this.gap = 150;
         this.speed = 1.5;
         this.passed = false;
 
-        // Random height for the gap position
         const minGapPosition = 120;
         const maxGapPosition =
             canvas.height - ground.height - this.gap - minGapPosition;
@@ -19,10 +17,10 @@ class Pipe {
             minGapPosition;
 
         this.position = {
-            x: canvas.width, // Start right off the screen
+            x: canvas.width,
         };
 
-        this.color = "#3CB043"; // Green color for pipes
+        this.color = "#3CB043";
     }
 
     update() {
@@ -30,11 +28,9 @@ class Pipe {
     }
 
     draw() {
-        // Top pipe (upside down)
         this.ctx.fillStyle = this.color;
         this.ctx.fillRect(this.position.x, 0, this.width, this.gapPosition);
 
-        // Pipe cap for top pipe
         this.ctx.fillStyle = "#2A8C32";
         this.ctx.fillRect(
             this.position.x - 5,
@@ -43,7 +39,6 @@ class Pipe {
             20
         );
 
-        // Bottom pipe
         const bottomPipeTop = this.gapPosition + this.gap;
         const bottomPipeHeight =
             this.canvas.height - bottomPipeTop - this.ground.height;
@@ -55,7 +50,6 @@ class Pipe {
             bottomPipeHeight
         );
 
-        // Pipe cap for bottom pipe
         this.ctx.fillStyle = "#2A8C32";
         this.ctx.fillRect(
             this.position.x - 5,
@@ -68,7 +62,6 @@ class Pipe {
     checkCollision(bird) {
         if (bird.isDead) return false;
 
-        // Calculate bird's bounding box for easier collision detection
         const birdRight = bird.position.x + bird.radius;
         const birdLeft = bird.position.x - bird.radius;
         if (
@@ -82,17 +75,14 @@ class Pipe {
         const birdTop = bird.position.y - bird.radius;
         const birdBottom = bird.position.y + bird.radius;
 
-        // If bird is horizontally aligned with pipe
         if (
             birdRight > this.position.x &&
             birdLeft < this.position.x + this.width
         ) {
-            // Check if bird hits the top pipe
             if (birdTop < this.gapPosition) {
                 return true;
             }
 
-            // Check if bird hits the bottom pipe
             if (birdBottom > this.gapPosition + this.gap) {
                 return true;
             }
@@ -111,7 +101,7 @@ class PipeManager {
         this.canvas = canvas;
         this.ground = ground;
         this.pipes = [];
-        this.pipeSpawnInterval = 2000; // Milliseconds between pipe spawns
+        this.pipeSpawnInterval = 2000;
         this.lastSpawnTime = 0;
         this.score = 0;
     }
@@ -123,17 +113,14 @@ class PipeManager {
     }
 
     update(currentTime) {
-        // Spawn new pipes
         if (currentTime - this.lastSpawnTime > this.pipeSpawnInterval) {
             this.pipes.push(new Pipe(this.canvas, this.ground));
             this.lastSpawnTime = currentTime;
         }
 
-        // Update existing pipes
         for (let i = this.pipes.length - 1; i >= 0; i--) {
             this.pipes[i].update();
 
-            // Remove pipes that have gone off screen
             if (this.pipes[i].isOffScreen()) {
                 this.pipes.splice(i, 1);
             }
@@ -150,7 +137,6 @@ class PipeManager {
                 return true;
             }
 
-            // Check if bird passed a pipe
             if (
                 !pipe.passed &&
                 bird.position.x > pipe.position.x + pipe.width
@@ -166,15 +152,12 @@ class PipeManager {
         return this.score;
     }
 
-    // Get the nearest pipe in front of the bird (for AI input)
     getNearestPipe() {
         let nearestPipe = null;
         let nearestDistance = Infinity;
 
         for (const pipe of this.pipes) {
-            // Only consider pipes in front of the bird
             if (pipe.position.x > 100) {
-                // Bird's x position
                 const distance = pipe.position.x - 100;
                 if (distance < nearestDistance) {
                     nearestPipe = pipe;

@@ -10,12 +10,8 @@ class Game {
         this.ctx = canvas.getContext("2d");
         this.ground = new Ground(canvas);
         this.pipeManager = new PipeManager(canvas, this.ground);
-
-        // Human mode
         this.bird = new Bird(canvas);
         this.isHumanPlaying = true;
-
-        // AI mode
         this.neat = new Neat(
             canvas,
             this.ground,
@@ -23,25 +19,19 @@ class Game {
             this.populationSize
         );
         this.isAITraining = false;
-
-        // Game state
         this.isRunning = false;
         this.canJump = true;
         this.jumpCooldown = 300;
         this.gameOver = false;
         this.lastFrameTime = 0;
-
-        // Performance monitoring
         this.frameCount = 0;
         this.lastFpsUpdate = 0;
         this.fps = 0;
-
         this.bindEvents();
     }
 
     bindEvents() {
         window.addEventListener("keydown", (e) => {
-            // Human controls
             if (this.isHumanPlaying) {
                 if (e.code === "Space" && this.canJump && !this.gameOver) {
                     this.bird.jump();
@@ -61,30 +51,26 @@ class Game {
                 }
             }
 
-            // Switch between human and AI mode
             if (e.code === "KeyH") {
                 this.isHumanPlaying = true;
-                this.isAITraining = false; // Make sure AI training stops
+                this.isAITraining = false;
                 this.neat.stopTraining();
-                this.restart(); // Restart in human mode
-                // Don't automatically start human mode, wait for SPACE
+                this.restart();
             } else if (e.code === "KeyA") {
                 this.isHumanPlaying = false;
-                this.gameOver = false; // Reset game over
-                this.isAITraining = true; // <-- ADD THIS LINE
-                this.restart(); // Restart in AI mode (creates new NEAT)
-                this.neat.startTraining(); // <-- ADD THIS LINE (to ensure neat.isTraining is true)
-                this.start(); // Start the game loop
+                this.gameOver = false;
+                this.isAITraining = true;
+                this.restart();
+                this.neat.startTraining();
+                this.start();
             }
 
-            // AI training controls - T can now be a toggle/pause
             if (e.code === "KeyT") {
                 if (!this.isHumanPlaying) {
-                    // Only affect AI mode
-                    this.isAITraining = !this.isAITraining; // Toggle the flag
+                    this.isAITraining = !this.isAITraining;
                     if (this.isAITraining) {
                         this.neat.startTraining();
-                        if (!this.isRunning) this.start(); // Start if paused
+                        if (!this.isRunning) this.start();
                     } else {
                         this.neat.stopTraining();
                     }
@@ -126,20 +112,6 @@ class Game {
         this.gameLoop(this.lastFrameTime);
     }
 
-    // toggleAITraining() {
-    //     if (!this.isAITraining) {
-    //         this.isAITraining = true;
-    //         this.isHumanPlaying = false;
-    //         this.gameOver = false;
-    //         this.restart();
-    //         this.neat.startTraining();
-    //         this.start();
-    //     } else {
-    //         this.isAITraining = false;
-    //         this.neat.stopTraining();
-    //     }
-    // }
-
     update(currentTime) {
         if (this.isHumanPlaying) {
             if (this.gameOver) return;
@@ -148,27 +120,22 @@ class Game {
             this.ground.update();
             this.pipeManager.update(currentTime);
 
-            // Check if bird collides with ground
             if (this.ground.checkCollision(this.bird)) {
                 this.gameOver = true;
             }
 
-            // Check if bird collides with pipes
             if (this.pipeManager.checkCollisions(this.bird)) {
                 this.gameOver = true;
             }
         } else {
-            // AI training mode
             this.ground.update();
             this.pipeManager.update(currentTime);
 
-            // Update NEAT
             if (this.isAITraining) {
                 this.neat.update(currentTime);
             }
         }
 
-        // Calculate FPS
         this.frameCount++;
         if (currentTime - this.lastFpsUpdate >= 1000) {
             this.fps = this.frameCount;
@@ -186,7 +153,6 @@ class Game {
         if (this.isHumanPlaying) {
             this.bird.draw();
 
-            // Draw score
             this.ctx.fillStyle = "black";
             this.ctx.font = "36px Arial";
             this.ctx.fillText(
@@ -209,8 +175,6 @@ class Game {
                     this.canvas.width / 2 - 100,
                     this.canvas.height / 2
                 );
-
-                // Draw final score
                 this.ctx.font = "36px Arial";
                 this.ctx.fillText(
                     "Score: " + this.pipeManager.getScore(),
@@ -218,7 +182,6 @@ class Game {
                     this.canvas.height / 2 + 50
                 );
             } else if (!this.isRunning) {
-                // Draw instructions at game start
                 this.ctx.fillStyle = "black";
                 this.ctx.font = "24px Arial";
                 this.ctx.fillText(
@@ -228,13 +191,11 @@ class Game {
                 );
             }
         } else {
-            // Draw AI birds and training stats
             this.neat.draw(this.ctx);
         }
 
         this.ground.draw();
 
-        // Display FPS and controls
         this.ctx.fillStyle = "white";
         this.ctx.font = "16px Arial";
         this.ctx.fillText(`FPS: ${this.fps}`, this.canvas.width - 80, 30);

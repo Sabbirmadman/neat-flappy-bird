@@ -3,8 +3,6 @@ class NeuralNetwork {
         this.inputNodes = inputNodes;
         this.hiddenNodes = hiddenNodes;
         this.outputNodes = outputNodes;
-
-        // Initialize weights with random values between -1 and 1
         this.weightsIH = this.initializeWeights(
             this.inputNodes,
             this.hiddenNodes
@@ -13,8 +11,6 @@ class NeuralNetwork {
             this.hiddenNodes,
             this.outputNodes
         );
-
-        // Initialize biases
         this.biasH = Array(this.hiddenNodes)
             .fill()
             .map(() => Math.random() * 2 - 1);
@@ -24,7 +20,6 @@ class NeuralNetwork {
     }
 
     initializeWeights(rows, cols) {
-        // Create a matrix filled with random values between -1 and 1
         let weights = [];
         for (let i = 0; i < rows; i++) {
             weights.push([]);
@@ -35,12 +30,10 @@ class NeuralNetwork {
         return weights;
     }
 
-    // Apply the activation function (sigmoid) to a value
     activate(x) {
         return 1 / (1 + Math.exp(-x));
     }
 
-    // Feed forward through the neural network
     feedForward(inputs) {
         if (inputs.length !== this.inputNodes) {
             throw new Error(
@@ -48,7 +41,6 @@ class NeuralNetwork {
             );
         }
 
-        // Calculate hidden layer outputs
         let hiddenOutputs = Array(this.hiddenNodes).fill(0);
 
         for (let i = 0; i < this.hiddenNodes; i++) {
@@ -59,7 +51,6 @@ class NeuralNetwork {
             hiddenOutputs[i] = this.activate(sum);
         }
 
-        // Calculate final outputs
         let finalOutputs = Array(this.outputNodes).fill(0);
 
         for (let i = 0; i < this.outputNodes; i++) {
@@ -73,58 +64,45 @@ class NeuralNetwork {
         return finalOutputs;
     }
 
-    // Create a copy of this neural network
     copy() {
         let copy = new NeuralNetwork(
             this.inputNodes,
             this.hiddenNodes,
             this.outputNodes
         );
-
-        // Copy weights and biases
         copy.weightsIH = JSON.parse(JSON.stringify(this.weightsIH));
         copy.weightsHO = JSON.parse(JSON.stringify(this.weightsHO));
         copy.biasH = [...this.biasH];
         copy.biasO = [...this.biasO];
-
         return copy;
     }
 
-    // Mutate the weights and biases with a given probability
     mutate(rate) {
         const mutateValue = (val) => {
             if (Math.random() < rate) {
-                // Increase chance for random weight slightly (e.g., 7%)
                 if (Math.random() < 0.07) {
                     return Math.random() * 2 - 1;
-                }
-                // Increase chance for larger adjustment slightly (e.g., 13%)
-                else if (Math.random() < 0.13) {
+                } else if (Math.random() < 0.13) {
                     return val + (Math.random() * 0.8 - 0.4);
-                }
-                // Smaller adjustment (80% chance)
-                else {
+                } else {
                     return val + (Math.random() * 0.2 - 0.1);
                 }
             }
             return val;
         };
 
-        // Mutate input->hidden weights
         for (let i = 0; i < this.inputNodes; i++) {
             for (let j = 0; j < this.hiddenNodes; j++) {
                 this.weightsIH[i][j] = mutateValue(this.weightsIH[i][j]);
             }
         }
 
-        // Mutate hidden->output weights
         for (let i = 0; i < this.hiddenNodes; i++) {
             for (let j = 0; j < this.outputNodes; j++) {
                 this.weightsHO[i][j] = mutateValue(this.weightsHO[i][j]);
             }
         }
 
-        // Mutate biases
         this.biasH = this.biasH.map(mutateValue);
         this.biasO = this.biasO.map(mutateValue);
     }
